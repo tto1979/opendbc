@@ -9,6 +9,7 @@
 #define TOYOTA_COMMON_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
   {0x2E4, 0, 5}, \
+  {0x750, 0, 8}, /* white list 0x750 for Enhanced Diagnostic Request */ \
 
 #define TOYOTA_COMMON_SECOC_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
@@ -30,11 +31,17 @@
            {0x224, 0, 8, .check_checksum = false, .frequency = 40U},                                        \
            {0x226, 0, 8, .check_checksum = false, .frequency = 40U}}},                                      \
 
+#define AUTO_BRAKEHOLD_RX_CHECKS                                                                            \
+  {.msg = {{0x1D3, 0, 8, .check_checksum = true, .frequency = 33U}, { 0 }, { 0 }}},                         \
+
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
 static bool toyota_stock_longitudinal = false;
 static bool toyota_lta = false;
 static int toyota_dbc_eps_torque_factor = 100;   // conversion factor for STEER_TORQUE_EPS in %: see dbc file
+
+static bool toyota_unsupported_dsu_car = false;
+static bool toyota_sdsu = false;
 
 static uint32_t toyota_compute_checksum(const CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
@@ -123,6 +130,17 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
       }
     }
 
+    // wrap lateral controls on main
+    if (addr == 0x1D3) {
+      // ACC main switch on is a prerequisite to enter controls, exit controls immediately on main switch off
+      // Signal: PCM_CRUISE_2/MAIN_ON at 15th bit
+      acc_main_on = GET_BIT(to_push, 15U) != 0U;
+    }
+
+    if ((addr == 0x365) && toyota_unsupported_dsu_car) {
+      acc_main_on = GET_BIT(to_push, 0U) != 0U;
+    }
+
     // sample speed
     if (addr == 0xaa) {
       int speed = 0;
@@ -138,7 +156,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
     }
 
     bool stock_ecu_detected = addr == 0x2E4;  // STEERING_LKA
-    if (!toyota_stock_longitudinal && (addr == 0x343)) {
+    if (!toyota_stock_longitudinal && (addr == 0x343) && !toyota_sdsu) {
       stock_ecu_detected = true;  // ACC_CONTROL
     }
     generic_rx_checks(stock_ecu_detected);
@@ -146,6 +164,8 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool toyota_tx_hook(const CANPacket_t *to_send) {
+  bool sport_mode = (alternative_experience & ALT_EXP_RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX) != 0;
+
   const TorqueSteeringLimits TOYOTA_TORQUE_STEERING_LIMITS = {
     .max_steer = 1500,
     .max_rate_up = 15,          // ramp up slow
@@ -187,6 +207,11 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
     .min_accel = -3500,  // -3.5 m/s2
   };
 
+  const LongitudinalLimits TOYOTA_LONG_LIMITS_SPORT = {
+    .max_accel = 4000,   // 4.0 m/s2
+    .min_accel = -3500,  // -3.5 m/s2
+  };
+
   bool tx = true;
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
@@ -199,7 +224,11 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
       desired_accel = to_signed(desired_accel, 16);
 
       bool violation = false;
-      violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
+      if (sport_mode) {
+        violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS_SPORT);
+      } else {
+        violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
+      }
 
       // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
       if (toyota_stock_longitudinal) {
@@ -304,14 +333,35 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
         }
       }
     }
+
+    // AleSato's automatic brakehold
+    if ((addr == 0x344) && (alternative_experience & ALT_EXP_ALLOW_AEB)) {
+      if (vehicle_moving || gas_pressed || !acc_main_on) {
+        tx = false;
+      }
+    }
   }
 
   // UDS: Only tester present ("\x0F\x02\x3E\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (addr == 0x750) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
     bool invalid_uds_msg = (GET_BYTES(to_send, 0, 4) != 0x003E020FU) || (GET_BYTES(to_send, 4, 4) != 0x0U);
-    if (invalid_uds_msg) {
-      tx = 0;
+
+    // Enhanced BSM
+    bool top_valid_uds_msgs = ((GET_BYTES(to_send, 0, 4) == 0x10002141U) ||  // disable left BSM debug
+                              (GET_BYTES(to_send, 0, 4) == 0x60100241U) ||  // enable left BSM debug
+                              (GET_BYTES(to_send, 0, 4) == 0x69210241U) ||  // poll left BSM status
+                              (GET_BYTES(to_send, 0, 4) == 0x10002142U) ||  // disable right BSM debug
+                              (GET_BYTES(to_send, 0, 4) == 0x60100242U) ||  // enable right BSM debug
+                              (GET_BYTES(to_send, 0, 4) == 0x69210242U))    // poll right BSM status
+                              && (GET_BYTES(to_send, 4, 4) == 0x0U);
+
+    top_valid_uds_msgs |= (GET_BYTES(to_send, 0, 4) == 0x11300540U) &&       // automatic door locking and unlocking
+                         ((GET_BYTES(to_send, 4, 4) == 0x00004000U) ||      // unlock
+                          (GET_BYTES(to_send, 4, 4) == 0x00008000U));       // lock
+
+    if (invalid_uds_msg && !top_valid_uds_msgs) {
+      tx = false;
     }
   }
 
@@ -339,6 +389,9 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
+  const uint32_t TOYOTA_PARAM_SDSU = 64UL << TOYOTA_PARAM_OFFSET;
+  const uint32_t TOYOTA_PARAM_UNSUPPORTED_DSU_CAR = 128UL << TOYOTA_PARAM_OFFSET;
+
 #ifdef ALLOW_DEBUG
   const uint32_t TOYOTA_PARAM_SECOC = 8UL << TOYOTA_PARAM_OFFSET;
   toyota_secoc = GET_FLAG(param, TOYOTA_PARAM_SECOC);
@@ -348,6 +401,8 @@ static safety_config toyota_init(uint16_t param) {
   toyota_stock_longitudinal = GET_FLAG(param, TOYOTA_PARAM_STOCK_LONGITUDINAL);
   toyota_lta = GET_FLAG(param, TOYOTA_PARAM_LTA);
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
+  toyota_unsupported_dsu_car = GET_FLAG(param, TOYOTA_PARAM_UNSUPPORTED_DSU_CAR);
+  toyota_sdsu = GET_FLAG(param, TOYOTA_PARAM_SDSU);
 
   safety_config ret;
   if (toyota_stock_longitudinal) {
@@ -394,7 +449,9 @@ static int toyota_fwd_hook(int bus_num, int addr) {
     is_lkas_msg |= toyota_secoc && (addr == 0x131);
     // in TSS2 the camera does ACC as well, so filter 0x343
     bool is_acc_msg = (addr == 0x343);
-    bool block_msg = is_lkas_msg || (is_acc_msg && !toyota_stock_longitudinal);
+    // Block AEB when stoped to use as a automatic brakehold
+    bool is_aeb_msg = ((addr == 0x344) && (alternative_experience & ALT_EXP_ALLOW_AEB));
+    bool block_msg = is_lkas_msg || (is_acc_msg && !toyota_stock_longitudinal) || (is_aeb_msg && !vehicle_moving && acc_main_on && !gas_pressed);
     if (!block_msg) {
       bus_fwd = 0;
     }

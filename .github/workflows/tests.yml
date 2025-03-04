@@ -2,8 +2,8 @@ name: tests
 
 on:
   push:
-    branches:
-      - master
+    # branches:
+      # - master
   pull_request:
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
   misra_linter:
     name: MISRA C:2012 Linter
     runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Set up
         run: sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi
@@ -62,7 +62,7 @@ jobs:
   misra_mutation:
     name: MISRA C:2012 Mutation
     runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Set up
         run: sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi
@@ -76,7 +76,7 @@ jobs:
             cppcheck-cache-${{ runner.os }}-${{ github.ref }}
             cppcheck-cache-${{ runner.os }}-
       - name: MISRA mutation tests
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: |
           source setup.sh
           scons -j8
@@ -92,13 +92,13 @@ jobs:
   mutation:
     name: Safety mutation tests
     runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # need master to get diff
       - name: Run mutation tests
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
           source setup.sh
           scons -j8

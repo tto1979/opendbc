@@ -186,6 +186,7 @@ struct CarState {
   regenBraking @45 :Bool; # this is user pedal only
   parkingBrake @39 :Bool;
   brakeHoldActive @38 :Bool;
+  brakeLights @19 :Bool;
 
   # steering wheel
   steeringAngleDeg @7 :Float32;
@@ -235,6 +236,15 @@ struct CarState {
 
   # process meta
   cumLagMs @50 :Float32;
+
+  # TOP
+  steeringWheelCar @58 :Bool;
+  rightBlindspotD1 @59 :Float32;
+  rightBlindspotD2 @60 :Float32;
+  leftBlindspotD1 @61 :Float32;
+  leftBlindspotD2 @62 :Float32;
+  blindspotside @63 :Float32;
+  distanceLines @64 :UInt8; # KRKeegan toyota distance lines
 
   struct WheelSpeeds {
     # optional wheel speeds
@@ -290,7 +300,6 @@ struct CarState {
 
   # deprecated
   errorsDEPRECATED @0 :List(OnroadEventDEPRECATED.EventName);
-  brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
@@ -426,6 +435,9 @@ struct CarControl {
       prompt @6;
       promptRepeat @7;
       promptDistracted @8;
+
+      # AleSato's automatic brakehold
+      engageBrakehold @9;
     }
   }
 
@@ -521,6 +533,10 @@ struct CarParams {
   secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
+  # TOP
+  experimentalModeViaWheel @77 :Bool;
+  twilsoncoNNFF @78 :Bool;
+
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @3 :UInt16;
@@ -550,6 +566,10 @@ struct CarParams {
     steeringAngleDeadzoneDeg @5 :Float32;
     latAccelFactor @6 :Float32;
     latAccelOffset @7 :Float32;
+
+    #TOP
+    nnModelName @8 :Text;
+    nnModelFuzzyMatch @9 :Bool;
   }
 
   struct LongitudinalPIDTuning {

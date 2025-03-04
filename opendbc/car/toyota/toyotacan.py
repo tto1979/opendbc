@@ -40,17 +40,18 @@ def create_lta_steer_command_2(packer, frame):
   return packer.make_can_msg("STEERING_LTA_2", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, permit_braking, standstill_req, lead, acc_type, fcw_alert, distance):
+def create_accel_command(packer, accel, accel_net, pcm_cancel, permit_braking, standstill_req, lead, acc_type, fcw_alert, distance, reverse_acc):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
+    "ACCEL_CMD_ALT": accel_net,
     "ACC_TYPE": acc_type,
     "DISTANCE": distance,
     "MINI_CAR": lead,
     "PERMIT_BRAKING": permit_braking,
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
-    "ALLOW_LONG_PRESS": 1,
+    "ALLOW_LONG_PRESS": reverse_acc,
     "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
@@ -146,3 +147,47 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     ]})
 
   return packer.make_can_msg("LKAS_HUD", 0, values)
+
+
+def create_brakehold_command(packer, stock_AEB, cut3frames):
+  values = {
+    "DSS1GDRV": 1023,
+    "PBRTRGR": cut3frames,
+  }
+
+  if len(stock_AEB):
+    values.update({s: stock_AEB[s] for s in [
+      # They are not all necessary since brakehold only sends stopped,
+      # however we will leave prepared for the future alternative AEB of the comma.ai
+      "DSS1GDRV",
+      "DS1STAT2",
+      "DS1STBK2",
+      "PCSWAR",
+      "PCSALM",
+      "PCSOPR",
+      "PCSABK",
+      "PBATRGR",
+      "PPTRGR",
+      "IBTRGR",
+      "CLEXTRGR",
+      "IRLT_REQ",
+      "BRKHLD",
+      "AVSTRGR",
+      "VGRSTRGR",
+      "PREFILL",
+      "PBRTRGR",
+      "PCSDIS",
+      "PBPREPMP",
+    ]})
+
+  return packer.make_can_msg("PRE_COLLISION_2", 0, values)
+
+def cut_traction_command(packer):
+  values = {
+    "COUNTER": 0,
+    "FORCE": 1023,
+    "STATE": 3,
+    "BRAKE_STATUS": 0,
+    "PRECOLLISION_ACTIVE": 1,
+  }
+  return packer.make_can_msg("PRE_COLLISION", 0, values)

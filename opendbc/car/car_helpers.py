@@ -1,6 +1,7 @@
 import os
 import time
 
+from openpilot.common.params import Params
 from opendbc.car import gen_empty_fingerprint
 from opendbc.car.can_definitions import CanRecvCallable, CanSendCallable
 from opendbc.car.carlog import carlog
@@ -163,6 +164,10 @@ def get_radar_interface(CP: CarParams):
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, experimental_long_allowed: bool,
             num_pandas: int = 1, cached_params: CarParamsT | None = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params)
+
+  car_model = Params().get("CarModel")
+  if car_model is not None and car_model != b"[-Not selected-]":
+    candidate = car_model.decode("utf-8")
 
   if candidate is None:
     carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
