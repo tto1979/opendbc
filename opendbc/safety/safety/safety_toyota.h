@@ -39,7 +39,7 @@
   {.msg = {{0x101, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 50U}, { 0 }, { 0 }}},  \
 
 #define AUTO_BRAKEHOLD_RX_CHECKS                                                                            \
-  {.msg = {{0x1D3, 0, 8, .check_checksum = true, .frequency = 33U}, { 0 }, { 0 }}},                         \
+  {.msg = {{0x1D3, 0, 8, .ignore_counter = true, .frequency = 33U}, { 0 }, { 0 }}},                         \
 
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
