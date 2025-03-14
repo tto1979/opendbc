@@ -1,3 +1,4 @@
+from openpilot.common.params import Params
 from opendbc.car import Bus, structs, get_safety_config, uds
 from opendbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                                   MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, \
@@ -153,16 +154,21 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
 
-    if candidate in TSS2_CAR:
-      ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
-      ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.22
-      ret.stoppingDecelRate = 0.004  # reach stopping target smoothly
+    ret.vEgoStopping = 0.25
+    ret.vEgoStarting = 0.22
+    ret.stoppingDecelRate = 0.25  # reach stopping target smoothly
 
-      # Hybrids have much quicker longitudinal actuator response
-      if ret.flags & ToyotaFlags.HYBRID.value:
-        ret.longitudinalActuatorDelay = 0.05
-        ret.stoppingDecelRate = 0.25  # reach stopping target smoothly
+    if candidate in TSS2_CAR:
+      ret.stopAccel = -0.4
+      ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
+      if Params().get_bool("ToyotaTune"):
+        ret.stoppingDecelRate = 0.05    # reach stopping target smoothly
+      else:
+        ret.stoppingDecelRate = 0.0036  # reach stopping target smoothly
+
+    # Hybrids have much quicker longitudinal actuator response
+    if ret.flags & ToyotaFlags.HYBRID.value:
+      ret.longitudinalActuatorDelay = 0.05
 
     return ret
 
