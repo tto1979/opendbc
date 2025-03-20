@@ -22,7 +22,7 @@
   {0x128, 1, 6, false}, {0x141, 1, 4, false}, {0x160, 1, 8, false}, {0x161, 1, 7, false}, {0x470, 1, 4, false},  /* DSU bus 1 */                                                                    \
   {0x411, 0, 8, false},  /* PCS_HUD */                                                                                                                                                              \
   {0x750, 0, 8, false},  /* radar diagnostic address */                                                                                                                                             \
-  {0x343, 0, 8, true},  /* ACC */                                                                                                                                                                   \
+  {0x343, 0, 8, false},  /* ACC */                                                                                                                                                                   \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                          \
   {.msg = {{ 0xaa, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 83U}, { 0 }, { 0 }}},  \
