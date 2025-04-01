@@ -256,7 +256,7 @@ extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 #define ALT_EXP_ALLOW_AEB 16
 
 // DP: Always Lane Keep Assist (always on lat)
-#define ALT_EXP_ALKA 32
+#define ALT_EXP_ALKA 1024
 
 extern int alternative_experience;
 
