@@ -543,8 +543,8 @@ struct CarParams {
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
   # TOP
-  experimentalModeViaWheel @77 :Bool;
-  twilsoncoNNFF @78 :Bool;
+  experimentalModeViaWheel @78 :Bool;
+  twilsoncoNNFF @79 :Bool;
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
