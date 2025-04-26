@@ -167,7 +167,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in TSS2_CAR:
       ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.22
+      ret.vEgoStarting = 0.25
 
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
       if Params().get_bool("ToyotaTune"):
