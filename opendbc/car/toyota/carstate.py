@@ -63,7 +63,9 @@ class CarState(CarStateBase):
     self.distance_button_hold = 0
     self.gap_button_counter = 0
     self.short_press_button_counter = 0
-
+    if self.params.get("UserExperimentalMode") is None:
+      user_exp_mode = self.params.get_bool("ExperimentalMode")
+      self.params.put_bool("UserExperimentalMode", user_exp_mode)
 
     # bsm
     self.toyota_bsm = Params().get_bool("toyota_bsm")
@@ -300,7 +302,9 @@ class CarState(CarStateBase):
       if not self.distance_button_hold:
         self.gap_button_counter += 1
         if self.gap_button_counter > 150:
-          self.params.put_bool_nonblocking('ExperimentalMode', not self.params.get_bool("ExperimentalMode"))
+          new_exp_mode = not self.params.get_bool("ExperimentalMode")
+          self.params.put_bool_nonblocking('ExperimentalMode', new_exp_mode)
+          self.params.put_bool_nonblocking('UserExperimentalMode', new_exp_mode)
           self.gap_button_counter = 0
 
     if not self.distance_button and self.ispressed_prev and self.short_press_button_counter < 50:
