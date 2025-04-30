@@ -8,7 +8,6 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
-from openpilot.common.params import Params
 
 Ecu = CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -36,7 +35,7 @@ class CarControllerParams:
   MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
   def __init__(self, CP):
-    if Params().get_bool("Dynamic_Follow"):
+    if CP.flags & ToyotaFlags.ACCEL_PERSONALITY:
       self.ACCEL_MAX = 3.0
     else:
       self.ACCEL_MAX = 2.0  # m/s2, lower than allowed 2.0 m/s^2 for tuning reasons
@@ -64,7 +63,6 @@ class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
   DISABLE_RADAR = 4
-  RADAR_CAN_FILTER = 4096
 
   # Static flags
   TSS2 = 8
@@ -79,6 +77,9 @@ class ToyotaFlags(IntFlag):
   # these cars can utilize 3.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
+  RADAR_CAN_FILTER = 2 ** 12
+  ALKA = 2 ** 13
+  ACCEL_PERSONALITY = 2 ** 14
 
 class Footnote(Enum):
   CAMRY = CarFootnote(

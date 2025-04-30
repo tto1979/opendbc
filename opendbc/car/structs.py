@@ -20,3 +20,4 @@ CarControlT = capnp.lib.capnp._StructModule
 CarParamsT = capnp.lib.capnp._StructModule
 class TopFlags:
   LateralALKA = 1
+  AccelPersonality = 2
