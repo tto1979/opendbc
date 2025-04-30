@@ -173,6 +173,8 @@ class CarInterface(CarInterfaceBase):
       if Params().get_bool("ToyotaTune"):
         ret.stopAccel = -0.4
         ret.stoppingDecelRate = 0.15   # reach stopping target smoothly
+        if candidate == CAR.TOYOTA_RAV4_TSS2:
+          ret.stoppingDecelRate = 0.3  # optimal on rav4
       else:
         ret.stoppingDecelRate = 0.05  # reach stopping target smoothly
 
