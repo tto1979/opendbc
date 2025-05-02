@@ -20,7 +20,7 @@
   TOYOTA_COMMON_TX_MSGS \
   /* DSU bus 0 */ \
   {0x283, 0, 7, .check_relay = false}, {0x2E6, 0, 8, .check_relay = false}, {0x2E7, 0, 8, .check_relay = false}, {0x33E, 0, 7, .check_relay = false}, \
-  {0x344, 0, 8, .check_relay = false}, {0x365, 0, 7, .check_relay = false}, {0x366, 0, 7, .check_relay = false}, {0x4CB, 0, 8, .check_relay = false}, \
+  {0x344, 0, 8, .check_relay = false, .disable_static_blocking = true}, {0x365, 0, 7, .check_relay = false}, {0x366, 0, 7, .check_relay = false}, {0x4CB, 0, 8, .check_relay = false}, \
   /* DSU bus 1 */ \
   {0x128, 1, 6, .check_relay = false}, {0x141, 1, 4, .check_relay = false}, {0x160, 1, 8, .check_relay = false}, {0x161, 1, 7, .check_relay = false}, \
   {0x470, 1, 4, .check_relay = false}, \
@@ -34,6 +34,7 @@
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                          \
   {.msg = {{ 0xaa, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 83U}, { 0 }, { 0 }}},  \
   {.msg = {{0x260, 0, 8, .ignore_counter = true, .quality_flag = (lta), .frequency = 50U}, { 0 }, { 0 }}},    \
+  {.msg = {{0x1D3, 0, 8, .ignore_counter = true, .frequency = 33U}, { 0 }, { 0 }}}, /* MADS Cruise Main */    \
 
 #define TOYOTA_RX_CHECKS(lta)                                                                                  \
   TOYOTA_COMMON_RX_CHECKS(lta)                                                                                 \
@@ -50,9 +51,6 @@
   {.msg = {{0x176, 0, 8, .ignore_counter = true, .frequency = 32U}, { 0 }, { 0 }}},                           \
   {.msg = {{0x116, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 42U}, { 0 }, { 0 }}},  \
   {.msg = {{0x101, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 50U}, { 0 }, { 0 }}},  \
-
-#define AUTO_BRAKEHOLD_RX_CHECKS                                                                            \
-  {.msg = {{0x1D3, 0, 8, .ignore_counter = true, .frequency = 33U}, { 0 }, { 0 }}},                         \
 
 static bool toyota_secoc = false;
 static bool toyota_alt_brake = false;
