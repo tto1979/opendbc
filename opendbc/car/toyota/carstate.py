@@ -463,8 +463,12 @@ class CarState(CarStateBase):
       if not CP.flags & ToyotaFlags.SECOC.value:
         cam_messages += [
           ("PRE_COLLISION", 33),
-          ("PRE_COLLISION_2", 33),
         ]
+
+        if CP.flags & ToyotaFlags.HYBRID:
+          cam_messages += [
+            ("PRE_COLLISION_2", 33),
+          ]
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
