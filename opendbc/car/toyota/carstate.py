@@ -318,7 +318,7 @@ class CarState(CarStateBase):
     ret.steeringWheelCar = True if self.CP.brand == "toyota" else False
 
     # Automatic BrakeHold
-    if self.AutomaticBrakeHold and self.CP.carFingerprint in TSS2_CAR and not (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
+    if self.AutomaticBrakeHold and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) and not (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
       self.stock_aeb = copy.copy(cp_cam.vl["PRE_COLLISION_2"])
       self.brakehold_condition_satisfied =  ret.standstill and ret.cruiseState.available and not ret.gasPressed and not \
                                             ret.cruiseState.enabled and (ret.gearShifter not in (self.GearShifter.reverse,\
@@ -463,12 +463,8 @@ class CarState(CarStateBase):
       if not CP.flags & ToyotaFlags.SECOC.value:
         cam_messages += [
           ("PRE_COLLISION", 33),
+          ("PRE_COLLISION_2", 33),
         ]
-
-    if (CP.carFingerprint in TSS2_CAR) and (not CP.flags & ToyotaFlags.SECOC.value):
-      cam_messages += [
-        ("PRE_COLLISION_2", 33),
-      ]
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
