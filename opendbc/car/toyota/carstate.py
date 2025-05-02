@@ -55,7 +55,7 @@ class CarState(CarStateBase):
     self.secoc_synchronization = None
 
     self.params = Params()
-    self.topsng = Params().get_bool("topsng")
+    self.AutomaticBrakeHold = self.params.get_bool('AleSato_AutomaticBrakeHold')
 
     self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
     # Change between chill/experimental mode using steering wheel
@@ -318,7 +318,7 @@ class CarState(CarStateBase):
     ret.steeringWheelCar = True if self.CP.brand == "toyota" else False
 
     # Automatic BrakeHold
-    if self.params.get_bool('AleSato_AutomaticBrakeHold') and self.CP.carFingerprint in TSS2_CAR and not (self.CP.flags & ToyotaFlags.HYBRID.value):
+    if self.AutomaticBrakeHold and self.CP.carFingerprint in TSS2_CAR and not (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
       self.stock_aeb = copy.copy(cp_cam.vl["PRE_COLLISION_2"])
       self.brakehold_condition_satisfied =  ret.standstill and ret.cruiseState.available and not ret.gasPressed and not \
                                             ret.cruiseState.enabled and (ret.gearShifter not in (self.GearShifter.reverse,\
@@ -457,8 +457,6 @@ class CarState(CarStateBase):
       cam_messages += [
         ("ACC_CONTROL", 33),
         ("PCS_HUD", 1),
-        # AleSato
-        ("PRE_COLLISION_2", 33),
       ]
 
       # TODO: Figure out new layout of the PRE_COLLISION message
@@ -466,6 +464,11 @@ class CarState(CarStateBase):
         cam_messages += [
           ("PRE_COLLISION", 33),
         ]
+
+    if (CP.carFingerprint in TSS2_CAR) and (not CP.flags & ToyotaFlags.SECOC.value):
+      cam_messages += [
+        ("PRE_COLLISION_2", 33),
+      ]
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
