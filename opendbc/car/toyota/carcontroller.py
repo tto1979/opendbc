@@ -73,8 +73,12 @@ def get_long_tune(CP, params):
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
   else:
-    kiBP = [0.,   5.,   12.,  20.,   27.,  40.]
-    kiV = [0.35, 0.225, 0.20, 0.172, 0.12, 0.1]
+    if CP.flags & ToyotaFlags.HYBRID.value:
+      kiBP = [0.,   5.,   12.,  20.,   27.,  40.]
+      kiV = [0.35, 0.225, 0.20, 0.172, 0.12, 0.1]
+    else:
+      kiBP = [2., 5.]
+      kiV = [0.35, 0.225]
 
   return PIDController(0.0, (kiBP, kiV), k_f=1.0,
                        pos_limit=params.ACCEL_MAX, neg_limit=params.ACCEL_MIN,
