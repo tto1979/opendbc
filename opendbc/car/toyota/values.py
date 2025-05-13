@@ -77,7 +77,7 @@ class ToyotaFlags(IntFlag):
   # these cars can utilize 3.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
-  RADAR_CAN_FILTER = 2 ** 12
+  RADAR_FILTER = 2 ** 12
   ALKA = 2 ** 13
   ACCEL_PERSONALITY = 2 ** 14
 
