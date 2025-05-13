@@ -295,8 +295,8 @@ class CarController(CarControllerBase):
                           and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng and self.stop_timer > 0.1 / DT_CTRL
 
     # AleSato's Automatic Brake Hold
-    if Params().get_bool("AleSato_AutomaticBrakeHold") and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) and not (self.CP.flags & ToyotaFlags.SECOC.value) and \
-       not (self.CP.flags & ToyotaFlags.HYBRID.value) and self.frame % 2 == 0:
+    if Params().get_bool("AleSato_AutomaticBrakeHold") and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
+       and not (self.CP.flags & ToyotaFlags.SECOC.value) and not (self.CP.flags & ToyotaFlags.HYBRID.value) and self.frame % 2 == 0:
       if CS.brakehold_governor:
         can_sends.append(toyotacan.create_brakehold_command(self.packer, {}, True if self.frame % 730 < 727 else False))
       else:
@@ -417,7 +417,8 @@ class CarController(CarControllerBase):
                                                      hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                                      hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
-      if not self.CP.flags & ToyotaFlags.RADAR_FILTER.value and (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
+      if not self.CP.flags & ToyotaFlags.RADAR_FILTER.value and (self.frame % 100 == 0 or send_ui) \
+         and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
         can_sends.append(toyotacan.create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
