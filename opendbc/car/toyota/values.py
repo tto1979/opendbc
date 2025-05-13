@@ -80,6 +80,7 @@ class ToyotaFlags(IntFlag):
   RADAR_FILTER = 2 ** 12
   ALKA = 2 ** 13
   ACCEL_PERSONALITY = 2 ** 14
+  ZSS = 2 ** 15
 
 class Footnote(Enum):
   CAMRY = CarFootnote(
