@@ -375,7 +375,7 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
                          ((GET_BYTES(to_send, 4, 4) == 0x00004000U) ||      // unlock
                           (GET_BYTES(to_send, 4, 4) == 0x00008000U));       // lock
 
-    if (invalid_uds_msg && !top_valid_uds_msgs) {
+    if ((invalid_uds_msg && !top_valid_uds_msgs) || toyota_stock_longitudinal) {
       tx = false;
     }
   }
