@@ -55,6 +55,7 @@ class ToyotaSafetyFlags(IntFlag):
   STOCK_LONGITUDINAL = (2 << 8)
   LTA = (4 << 8)
   SECOC = (8 << 8)
+  SDSU = (32 << 8)
   UNSUPPORTED_DSU_CAR = (64 << 8)
 
 

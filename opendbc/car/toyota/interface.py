@@ -148,6 +148,7 @@ class CarInterface(CarInterfaceBase):
 
       ret.flags |= ToyotaFlags.SMART_DSU.value
       ret.alphaLongitudinalAvailable = False
+      ret.safetyConfigs[0].safetyParam |= ToyotaSafetyFlags.SDSU.value
 
     # openpilot longitudinal enabled by default:
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
