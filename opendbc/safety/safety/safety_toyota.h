@@ -29,7 +29,22 @@
   /* radar diagnostic address */       \
   {0x750, 0, 8, .check_relay = false}, \
   /* ACC */                            \
-  {0x343, 0, 8, .check_relay = false},  \
+  {0x343, 0, 8, .check_relay = true},  \
+
+#define TOYOTA_COMMON_LONG_TX_MSGS_SDSU \
+  TOYOTA_COMMON_TX_MSGS \
+  /* DSU bus 0 */ \
+  {0x283, 0, 7, .check_relay = false}, {0x2E6, 0, 8, .check_relay = false}, {0x2E7, 0, 8, .check_relay = false}, {0x33E, 0, 7, .check_relay = false}, \
+  {0x344, 0, 8, .check_relay = false}, {0x365, 0, 7, .check_relay = false}, {0x366, 0, 7, .check_relay = false}, {0x4CB, 0, 8, .check_relay = false}, \
+  /* DSU bus 1 */ \
+  {0x128, 1, 6, .check_relay = false}, {0x141, 1, 4, .check_relay = false}, {0x160, 1, 8, .check_relay = false}, {0x161, 1, 7, .check_relay = false}, \
+  {0x470, 1, 4, .check_relay = false}, \
+  /* PCS_HUD */                        \
+  {0x411, 0, 8, .check_relay = false}, \
+  /* radar diagnostic address */       \
+  {0x750, 0, 8, .check_relay = false}, \
+  /* ACC */                            \
+  {0x343, 0, 8, .check_relay = false}, \
 
 #define TOYOTA_COMMON_RX_CHECKS(lta)                                                                          \
   {.msg = {{ 0xaa, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 83U}, { 0 }, { 0 }}},  \
@@ -375,7 +390,7 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
                          ((GET_BYTES(to_send, 4, 4) == 0x00004000U) ||      // unlock
                           (GET_BYTES(to_send, 4, 4) == 0x00008000U));       // lock
 
-    if (invalid_uds_msg && !top_valid_uds_msgs) {
+    if ((invalid_uds_msg && !top_valid_uds_msgs) || toyota_stock_longitudinal) {
       tx = false;
     }
   }
@@ -384,6 +399,7 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
 }
 
 static safety_config toyota_init(uint16_t param) {
+  bool toyota_sdsu = false;
   static const CanMsg TOYOTA_TX_MSGS[] = {
     TOYOTA_COMMON_TX_MSGS
   };
@@ -396,6 +412,10 @@ static safety_config toyota_init(uint16_t param) {
     TOYOTA_COMMON_LONG_TX_MSGS
   };
 
+  static const CanMsg TOYOTA_LONG_TX_MSGS_SDSU[] = {
+    TOYOTA_COMMON_LONG_TX_MSGS_SDSU
+  };
+
   // safety param flags
   // first byte is for EPS factor, second is for flags
   const uint32_t TOYOTA_PARAM_OFFSET = 8U;
@@ -404,6 +424,7 @@ static safety_config toyota_init(uint16_t param) {
   const uint32_t TOYOTA_PARAM_STOCK_LONGITUDINAL = 2UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_LTA = 4UL << TOYOTA_PARAM_OFFSET;
 
+  const uint32_t TOYOTA_PARAM_SDSU = 32UL << TOYOTA_PARAM_OFFSET;
   const uint32_t TOYOTA_PARAM_UNSUPPORTED_DSU_CAR = 64UL << TOYOTA_PARAM_OFFSET;
 
 #ifdef ALLOW_DEBUG
@@ -415,6 +436,7 @@ static safety_config toyota_init(uint16_t param) {
   toyota_stock_longitudinal = GET_FLAG(param, TOYOTA_PARAM_STOCK_LONGITUDINAL);
   toyota_lta = GET_FLAG(param, TOYOTA_PARAM_LTA);
   toyota_dbc_eps_torque_factor = param & TOYOTA_EPS_FACTOR;
+  toyota_sdsu = GET_FLAG(param, TOYOTA_PARAM_SDSU);
   toyota_unsupported_dsu_car = GET_FLAG(param, TOYOTA_PARAM_UNSUPPORTED_DSU_CAR);
 
   safety_config ret;
@@ -425,7 +447,12 @@ static safety_config toyota_init(uint16_t param) {
       SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
     }
   } else {
-    SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+    // Conditionally update the relay check for ACC (0x343) message based on SDSU status
+    if (toyota_sdsu) {
+      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS_SDSU, ret);
+    } else {
+      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+    }
   }
 
   if (toyota_secoc) {
