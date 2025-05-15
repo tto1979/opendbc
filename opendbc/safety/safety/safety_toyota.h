@@ -509,7 +509,7 @@ static safety_config toyota_init(uint16_t param) {
 static bool toyota_fwd_hook(int bus_num, int addr) {
   bool block_msg = false;
   if (bus_num == 2) {
-    // Block AEB when stoped to use as a automatic brakehold
+    // Block AEB when stopped to use as a automatic brakehold
     bool is_aeb_msg = ((addr == 0x344) && (alternative_experience & ALT_EXP_ALLOW_AEB));
     block_msg = (is_aeb_msg && !vehicle_moving && acc_main_on && !gas_pressed);
   }
