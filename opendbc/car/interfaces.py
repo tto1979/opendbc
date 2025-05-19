@@ -394,9 +394,6 @@ class CarInterfaceBase(ABC):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     return ret
 
-  def _update(self) -> structs.CarState:
-    return self.CS.update(self.can_parsers)
-
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
     # parse can
     for cp in self.can_parsers.values():
@@ -404,7 +401,7 @@ class CarInterfaceBase(ABC):
         cp.update_strings(can_packets)
 
     # get CarState
-    ret = self._update()
+    ret = self.CS.update(self.can_parsers)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers.values())
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers.values())
