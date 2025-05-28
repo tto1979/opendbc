@@ -124,7 +124,21 @@ class FluxModel:
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
-    return 1 / (1 + np.exp(-x))
+    x_clipped = np.clip(x, -500.0, 500.0)
+    x_clipped = np.asarray(x_clipped)
+    positive_mask = x_clipped >= 0
+    negative_mask = ~positive_mask
+    result = np.zeros_like(x_clipped, dtype=np.float32)
+
+    if np.any(positive_mask):
+      exp_neg_x = np.exp(-x_clipped[positive_mask])
+      result[positive_mask] = 1.0 / (1.0 + exp_neg_x)
+
+    if np.any(negative_mask):
+      exp_x = np.exp(x_clipped[negative_mask])
+      result[negative_mask] = exp_x / (1.0 + exp_x)
+
+    return result
 
   def identity(self, x):
     return x
@@ -160,8 +174,12 @@ class FluxModel:
         raise ValueError(f"Unknown activation: {activation}")
 
   def check_for_friction_override(self):
-    y = self.evaluate([10.0, 0.0, 0.2])
-    self.friction_override = (y < 0.1)
+    try:
+      y = self.evaluate([10.0, 0.0, 0.2])
+      self.friction_override = (y < 0.1)
+    except (OverflowError, RuntimeWarning, FloatingPointError, ValueError) as e:
+      print(f"Warning: Numerical issue in NN model check: {e}")
+      self.friction_override = True
 
 def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
   def check_nn_path(check_model):
