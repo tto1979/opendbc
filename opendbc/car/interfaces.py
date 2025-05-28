@@ -181,13 +181,13 @@ class FluxModel:
       print(f"Warning: Numerical issue in NN model check: {e}")
       self.friction_override = True
 
-def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
+def get_nn_model_path(car, eps_firmware) -> tuple[str | None, str | None, bool, float]:
   def check_nn_path(check_model):
     model_path = None
     max_similarity = -1.0
     for f in os.listdir(TORQUE_NN_MODEL_PATH):
-      if f.endswith(".json") and car in f:
-        model = f.replace(".json", "").replace(f"{TORQUE_NN_MODEL_PATH}/","")
+      if f.endswith(".json"):
+        model = f.replace(".json", "").replace(f"{TORQUE_NN_MODEL_PATH}/", "")
         similarity_score = similarity(model, check_model)
         if similarity_score > max_similarity:
           max_similarity = similarity_score
@@ -196,15 +196,17 @@ def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
 
   def check_candidate(car, eps_firmware):
     if len(eps_firmware) > 3:
-      eps_firmware = eps_firmware.replace("\\", "")
-      check_model = f"{car} {eps_firmware}"
+      eps_firmware_clean = eps_firmware.replace("\\", "")
+      check_model = f"{car} {eps_firmware_clean}"
     else:
       check_model = car
+
     model_path, max_similarity = check_nn_path(check_model)
-    if car not in str(model_path) or 0.0 <= max_similarity < 0.9:
+
+    if car not in str(model_path or "") or 0.0 <= max_similarity < 0.9:
       check_model = car
       model_path, max_similarity = check_nn_path(check_model)
-      if car not in str(model_path) or 0.0 <= max_similarity < 0.9:
+      if car not in str(model_path or "") or 0.0 <= max_similarity < 0.9:
         model_path = None
         max_similarity = 0.0
     return model_path, max_similarity
@@ -216,21 +218,32 @@ def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
   best_model = None
   best_similarity = 0.0
 
-  for candidate in [car, sub_candidate]:
-    model, similarity_score = check_candidate(candidate, eps_firmware)
-    if model is not None and similarity_score > best_similarity:
-      best_model = model
+  candidates = [car, sub_candidate] if sub_candidate != car else [car]
+
+  for candidate in candidates:
+    model_path, similarity_score = check_candidate(candidate, eps_firmware)
+    if model_path is not None and similarity_score > best_similarity:
+      best_model = model_path
       best_similarity = similarity_score
+  exact_match = best_similarity >= 0.99
 
-  return best_model, best_similarity
+  model_name = None
+  if best_model is not None:
+    model_name = os.path.splitext(os.path.basename(best_model))[0]
 
-def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, float]:
-  model_path, similarity_score = get_nn_model_path(car, eps_firmware)
+  return best_model, model_name, exact_match, best_similarity
+
+def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, str | None, bool, float]:
+  model_path, model_name, exact_match, similarity_score = get_nn_model_path(car, eps_firmware)
+  model = None
   if model_path is not None:
-    model = FluxModel(model_path)
-  else:
-    model = None
-  return model, similarity_score
+    try:
+      model = FluxModel(model_path)
+    except Exception as e:
+      print(f"Warning: Failed to load NN model from {model_path}: {e}")
+      model = None
+
+  return model, model_name, exact_match, similarity_score
 
 # generic car and radar interfaces
 
@@ -277,7 +290,14 @@ class CarInterfaceBase(ABC):
     return self.lat_torque_nn_model.evaluate(x)
 
   def initialize_lat_torque_nn(self, car, eps_firmware):
-    self.lat_torque_nn_model, _ = get_nn_model(car, eps_firmware)
+    self.lat_torque_nn_model, self.nn_model_name, self.nn_exact_match, self.nn_similarity = get_nn_model(car, eps_firmware)
+
+    if self.lat_torque_nn_model is not None:
+      match_type = "exact" if self.nn_exact_match else "fuzzy"
+      print(f"NN Model loaded: {self.nn_model_name} ({match_type} match, similarity: {self.nn_similarity:.3f})")
+    else:
+      print(f"No suitable NN model found for {car} (EPS: {eps_firmware})")
+
     return (self.lat_torque_nn_model is not None)
 
   @staticmethod
@@ -314,12 +334,17 @@ class CarInterfaceBase(ABC):
 
     if ret.lateralTuning.which() == 'torque':
       eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
-      model, similarity_score = get_nn_model_path(candidate, eps_firmware)
-      if model is not None:
-        ret.lateralTuning.torque.nnModelName = os.path.splitext(os.path.basename(model))[0]
-        ret.lateralTuning.torque.nnModelFuzzyMatch = (similarity_score < 0.99)
+      model_path, model_name, exact_match, similarity_score = get_nn_model_path(candidate, eps_firmware)
 
-    # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
+      if model_path is not None:
+        ret.lateralTuning.torque.nnModelName = model_name
+        ret.lateralTuning.torque.nnModelFuzzyMatch = not exact_match
+
+        match_info = f"exact ({similarity_score:.3f})" if exact_match else f"fuzzy ({similarity_score:.3f})"
+        print(f"Torque NN model: {model_name} - {match_info}")
+      else:
+        print(f"No torque NN model available for {candidate}")
+
     if not ret.notCar:
       ret.mass = ret.mass + STD_CARGO_KG
 
