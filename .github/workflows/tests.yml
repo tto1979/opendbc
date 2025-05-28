@@ -10,7 +10,6 @@ jobs:
   tests:
     name: ./test.sh
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +21,7 @@ jobs:
           - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
             flags: ''
     steps:
+    - uses: commaai/timeout@v1
       with:
         timeout: ${{ github.repository == 'commaai/opendbc' && '60' || '999' }}
     - uses: actions/checkout@v4
