@@ -309,11 +309,11 @@ class CarInterfaceBase(ABC):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
-    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, 0, False)
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False, 0, False)
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
-                 alpha_long: bool, top_params: int, docs: bool) -> structs.CarParams:
+                 alpha_long: bool, is_release: bool, top_params: int, docs: bool) -> structs.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -326,7 +326,7 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
     ret.flags |= int(platform.config.flags)
 
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, top_params, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, is_release, top_params, docs)
 
     if ret.steerControlType != structs.CarParams.SteerControlType.angle:
       if Params().get_bool("NNFF"):
@@ -357,7 +357,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[structs.CarParams.CarFw], alpha_long: bool, top_params: int, docs: bool) -> structs.CarParams:
+                  car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release: bool, top_params: int, docs: bool) -> structs.CarParams:
     raise NotImplementedError
 
   @staticmethod
