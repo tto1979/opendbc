@@ -305,6 +305,7 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
   const float curvature_factor = get_curvature_factor(fudged_speed, params);
 
   bool violation = false;
+  bool alka_enabled = (alternative_experience & ALT_EXP_ALKA) != 0;
 
   if (controls_allowed && steer_control_enabled) {
     // *** ISO lateral jerk limit ***
