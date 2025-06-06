@@ -411,7 +411,7 @@ class CarController(CarControllerBase):
       if self.frame % 20 == 0 or send_ui:
         can_sends.append(toyotacan.create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                                      hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                                     hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
+                                                     hud_control.rightLaneDepart, lat_active, CS.lkas_hud))
 
       if not self.CP.flags & ToyotaFlags.RADAR_FILTER.value and (self.frame % 100 == 0 or send_ui) \
          and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
