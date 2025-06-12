@@ -106,7 +106,6 @@ class CarState(CarStateBase):
     self.reset_brakehold = False
     self.prev_brakePressed = True
     self.slope_angle = 0.0
-    self.brakehold_governor = False
 
 
   def update(self, can_parsers) -> structs.CarState:
@@ -336,7 +335,7 @@ class CarState(CarStateBase):
 
     # Automatic BrakeHold
     if self.AutomaticBrakeHold and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
-       and not (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
+       and (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
       self.stock_aeb = copy.copy(cp_cam.vl["PRE_COLLISION_2"])
       self.brakehold_condition_satisfied =  ret.standstill and ret.cruiseState.available and not ret.gasPressed and not \
                                             ret.cruiseState.enabled and (ret.gearShifter not in (self.GearShifter.reverse,\
@@ -344,14 +343,14 @@ class CarState(CarStateBase):
       self.slope_angle = cp.vl["VSC1S07"]["ASLP"] # filtered pitch estimate from the car, negative is a downward slope
       if self.brakehold_condition_satisfied and self.slope_angle > -3:
         if self.brakehold_condition_counter > self.time_to_brakehold and not self.reset_brakehold:
-          self.brakehold_governor = True
+          ret.brakeholdGovernor = True
         else:
-          self.brakehold_governor = False
+          ret.brakeholdGovernor = False
         if not self.prev_brakePressed and ret.brakePressed: # disable automatic brakehold in second brakePress
           self.reset_brakehold = True
         self.brakehold_condition_counter += 1
       else:
-        self.brakehold_governor = False
+        ret.brakeholdGovernor = False
         self.reset_brakehold = False
         self.brakehold_condition_counter = 0
       self.prev_brakePressed = ret.brakePressed
