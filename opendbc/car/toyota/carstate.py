@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from cereal import custom
 from openpilot.common.params import Params
+
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
@@ -182,17 +183,13 @@ class CarState(CarStateBase):
         # Update the previous profile to prevent unnecessary re-syncing
         self.prev_accel_profile = self.accel_profile
 
-      if self.CP.carFingerprint != CAR.TOYOTA_MIRAI:
-        ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
-
-    ret.wheelSpeeds = self.get_wheel_speeds(
+    self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"],
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"],
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"],
     )
-    ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
-    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+
     if self.CP.carFingerprint == CAR.TOYOTA_PRIUS_V:
       ret.vEgoCluster = ret.vEgo * 1.08987654321
     else:
@@ -427,8 +424,6 @@ class CarState(CarStateBase):
       ]
     else:
       pt_messages.append(("VSC1S07", 20))
-      if CP.carFingerprint not in [CAR.TOYOTA_MIRAI]:
-        pt_messages.append(("ENGINE_RPM", 42))
 
       pt_messages += [
         ("GEAR_PACKET", 1),
