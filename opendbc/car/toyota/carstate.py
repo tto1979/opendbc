@@ -3,8 +3,7 @@ import numpy as np
 from cereal import custom
 from openpilot.common.params import Params
 
-from opendbc.can.can_define import CANDefine
-from opendbc.can.parser import CANParser
+from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.filter_simple import FirstOrderFilter
@@ -403,7 +402,7 @@ class CarState(CarStateBase):
   def get_can_parsers(CP):
     pt_messages = [
       ("LIGHT_STALK", 1),
-      ("BLINKERS_STATE", 0.15),
+      ("BLINKERS_STATE", 0),
       ("BODY_CONTROL_STATE", 3),
       ("BODY_CONTROL_STATE_2", 2),
       ("ESP_CONTROL", 3),
