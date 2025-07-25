@@ -404,12 +404,12 @@ class CarState(CarStateBase):
       ("BLINKERS_STATE", float('nan')),
     ]
 
-
+    parsers = {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
     }
 
     if CP.flags & ToyotaFlags.ZSS:
-      parsers[Bus.zss] = CANParser("toyota_zss", [], 0)
+      parsers[Bus.zss] = CANParser("toyota_zss", [("SECONDARY_STEER_ANGLE", 0)], 0)
 
     return parsers
