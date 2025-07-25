@@ -410,6 +410,6 @@ class CarState(CarStateBase):
     }
 
     if CP.flags & ToyotaFlags.ZSS:
-      parsers[Bus.zss] = CANParser("toyota_zss", [("SECONDARY_STEER_ANGLE", 0)], 0)
+      parsers[Bus.zss] = CANParser("toyota_zss", [], 0)
 
     return parsers
