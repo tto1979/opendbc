@@ -154,8 +154,8 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params)
 
   car_model = Params().get("CarModel")
-  if car_model is not None and car_model != b"[-Not selected-]":
-    candidate = car_model.decode("utf-8")
+  if car_model is not None and car_model != "[-Not selected-]":
+    candidate = car_model
 
   if candidate is None:
     carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
