@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 from cereal import custom
 from openpilot.common.params import Params
 
