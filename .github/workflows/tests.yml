@@ -72,8 +72,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        repository: 'commaai/openpilot'
-        ref: 'master'
+        repository: 'tto1979/openpilot'
+        ref: 'TOP'
         submodules: true
     - run: rm -rf opendbc_repo/
     - uses: actions/checkout@v4
