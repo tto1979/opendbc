@@ -298,9 +298,10 @@ class CarState(CarStateBase):
 
     buttonEvents = []
     if self.CP.carFingerprint in TSS2_CAR or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_FILTER):
-      # lkas button is wired to the camera
-      prev_lkas_button = self.lkas_button
-      self.lkas_button = cp_cam.vl["LKAS_HUD"]["LDA_ON_MESSAGE"]
+      if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
+        # lkas button is wired to the camera
+        prev_lkas_button = self.lkas_button
+        self.lkas_button = cp_cam.vl["LKAS_HUD"]["LDA_ON_MESSAGE"]
 
       # Cycles between 1 and 2 when pressing the button, then rests back at 0 after ~3s
       if self.lkas_button != 0 and self.lkas_button != prev_lkas_button:
