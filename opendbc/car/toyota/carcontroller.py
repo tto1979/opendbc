@@ -48,6 +48,10 @@ UNLOCK_CMD = b'\x40\x05\x30\x11\x00\x40\x00\x00'
 LOCK_CMD = b'\x40\x05\x30\x11\x00\x80\x00\x00'
 LOCK_AT_SPEED = 10 * CV.KPH_TO_MS
 
+# DAYTIME_RUNNING_LIGHT
+DRL_ON_CMD  = b'\x12\x00\x20\x00\x00\x00\x00\x00'  # DRL ON
+DRL_OFF_CMD = b'\x12\x00\x00\x00\x00\x00\x00\x00'  # DRL OFF
+
 # Blindspot codes
 LEFT_BLINDSPOT = b'\x41'
 RIGHT_BLINDSPOT = b'\x42'
@@ -148,6 +152,7 @@ class CarController(CarControllerBase):
       if self.last_gear != gear and gear == GearShifter.park:
         if self.toyotaautounlock:
           can_sends.append(CanData(0x750, UNLOCK_CMD, 0))
+          can_sends.append(CanData(0x622, DRL_OFF_CMD, 0))
         if self.toyotaautolock:
           self.lock_once = False
       elif self.toyotaautolock and not CS.out.doorOpen and gear == GearShifter.drive and not self.lock_once and CS.out.vEgo >= LOCK_AT_SPEED:
