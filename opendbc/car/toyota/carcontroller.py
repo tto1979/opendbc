@@ -41,7 +41,7 @@ COMPENSATORY_CALCULATION_THRESHOLD_V = [-0.2, -0.2, -0.05]  # m/s^2
 COMPENSATORY_CALCULATION_THRESHOLD_BP = [0., 20., 32.]  # m/s
 
 # resume, lead, and lane lines hysteresis
-UI_HYSTERESIS_TIME = 3.  # seconds
+UI_HYSTERESIS_TIME = 1.  # seconds
 
 GearShifter = structs.CarState.GearShifter
 UNLOCK_CMD = b'\x40\x05\x30\x11\x00\x40\x00\x00'
@@ -89,15 +89,15 @@ class CarController(CarControllerBase):
     self.last_angle = 0
     self.alert_active = False
     # self.last_standstill = False
-    self.resume_off_frames = 0.
     self.standstill_req = False
-    self.stop_timer = 0.
     self.permit_braking = True
-    self._standstill_req = False
-    self.lead = False
     self.steer_rate_counter = 0
-    self.prohibit_neg_calculation = True
     self.distance_button = 0
+
+    self._resume_false_frame = None
+    self.lead = False
+    self._standstill_req = False
+    self.prohibit_neg_calculation = True
 
     # *** start long control state ***
     self.long_pid = get_long_tune(self.CP, self.params)
@@ -271,24 +271,23 @@ class CarController(CarControllerBase):
 
     # *** gas and brake ***
 
-    # *** standstill logic ***
-    # mimic stock behavior, set standstill_req to False only when openpilot wants to resume
-    if not CC.cruiseControl.resume:
-        self.resume_off_frames += 1  # frame counter for hysteresis
-        # add a 1.5 second hysteresis to when CC.cruiseControl.resume turns off in order to prevent
-        # vehicle's dash from blinking
-        if self.resume_off_frames >= UI_HYSTERESIS_TIME / DT_CTRL:
+    # resume requested, clear pending delay and set standstill_req to low
+    if CC.cruiseControl.resume:
+        self._resume_false_frame = None
+            self._standstill_req = False
+    # resume not pressed
+    else:
+        # start delay timer if needed
+        if self._resume_false_frame is None:
+            self._resume_false_frame = self.frame
+
+        # only set standstill_req after waiting 1 s
+        if (self.frame - self._resume_false_frame) >= 3. / DT_CTRL:
             self._standstill_req = True
-    else:
-        self.resume_off_frames = 0
-        self._standstill_req = False
-    if CS.out.vEgo < 1e-3:
-      self.stop_timer += 1
-    else:
-      self.stop_timer = 0
-    # ignore standstill on NO_STOP_TIMER_CAR
-    self.standstill_req = actuators.longControlState == LongCtrlState.stopping and self._standstill_req \
-                          and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng and self.stop_timer > 0.5 / DT_CTRL
+        else:
+            self._standstill_req = False
+
+    self.standstill_req = self._standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng
 
     # AleSato's Automatic Brake Hold
     if Params().get_bool("AleSato_AutomaticBrakeHold") and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
