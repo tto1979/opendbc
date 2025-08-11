@@ -274,7 +274,7 @@ class CarController(CarControllerBase):
     # resume requested, clear pending delay and set standstill_req to low
     if CC.cruiseControl.resume:
         self._resume_false_frame = None
-            self._standstill_req = False
+          self._standstill_req = False
     # resume not pressed
     else:
         # start delay timer if needed
@@ -283,9 +283,9 @@ class CarController(CarControllerBase):
 
         # only set standstill_req after waiting 1 s
         if (self.frame - self._resume_false_frame) >= 3. / DT_CTRL:
-            self._standstill_req = True
+          self._standstill_req = True
         else:
-            self._standstill_req = False
+          self._standstill_req = False
 
     self.standstill_req = self._standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng
 
