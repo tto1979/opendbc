@@ -274,7 +274,7 @@ class CarController(CarControllerBase):
     # resume requested, clear pending delay and set standstill_req to low
     if CC.cruiseControl.resume:
         self._resume_false_frame = None
-          self._standstill_req = False
+        self._standstill_req = False
     # resume not pressed
     else:
         # start delay timer if needed
