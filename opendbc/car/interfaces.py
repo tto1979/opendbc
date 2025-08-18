@@ -52,6 +52,7 @@ LateralAccelFromTorqueCallbackType = Callable[[float, structs.CarParams.LateralT
 def similarity(s1:str, s2:str) -> float:
   return SequenceMatcher(None, s1, s2).ratio()
 
+
 @cache
 def get_torque_params():
   with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
@@ -81,10 +82,12 @@ def get_torque_params():
 
   return torque_params
 
-# Twilsonco's Lateral Neural Network Feedforward
+
 class FluxModel:
+  # Twilsonco's Lateral Neural Network Feedforward
   # dict used to rename activation functions whose names aren't valid python identifiers
   activation_function_names = {'σ': 'sigmoid'}
+
   def __init__(self, params_file, zero_bias=False):
     with open(params_file) as f:
       params = load(f)
@@ -168,6 +171,7 @@ class FluxModel:
       print(f"Warning: Numerical issue in NN model check: {e}")
       self.friction_override = True
 
+
 def get_nn_model_path(car, eps_firmware) -> tuple[str | None, str | None, bool, float]:
   def check_nn_path(check_model):
     model_path = None
@@ -219,6 +223,7 @@ def get_nn_model_path(car, eps_firmware) -> tuple[str | None, str | None, bool, 
     model_name = os.path.splitext(os.path.basename(best_model))[0]
 
   return best_model, model_name, exact_match, best_similarity
+
 
 def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, str | None, bool, float]:
   model_path, model_name, exact_match, similarity_score = get_nn_model_path(car, eps_firmware)

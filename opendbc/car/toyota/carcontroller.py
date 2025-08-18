@@ -52,6 +52,7 @@ LOCK_AT_SPEED = 10 * CV.KPH_TO_MS
 LEFT_BLINDSPOT = b'\x41'
 RIGHT_BLINDSPOT = b'\x42'
 
+
 def set_blindspot_debug_mode(lr,enable):
   if enable:
     m = lr + b'\x02\x10\x60\x00\x00\x00\x00'

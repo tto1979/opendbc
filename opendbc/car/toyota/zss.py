@@ -4,6 +4,7 @@ from opendbc.can.parser import CANParser
 ANGLE_DIFF_THRESHOLD = 4.0
 THRESHOLD_COUNT = 10
 
+
 class ZSS:
 
   def __init__(self, flags: int):

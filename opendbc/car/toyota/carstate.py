@@ -107,7 +107,6 @@ class CarState(CarStateBase):
     self.prev_brakePressed = True
     self.slope_angle = 0.0
 
-
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
@@ -345,9 +344,9 @@ class CarState(CarStateBase):
     if self.AutomaticBrakeHold and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
        and (self.CP.flags & ToyotaFlags.HYBRID.value) and not (self.CP.flags & ToyotaFlags.SECOC.value):
       self.stock_aeb = copy.copy(cp_cam.vl["PRE_COLLISION_2"])
-      self.brakehold_condition_satisfied =  ret.standstill and ret.cruiseState.available and not ret.gasPressed and not \
-                                            ret.cruiseState.enabled and (ret.gearShifter not in (self.GearShifter.reverse,\
-                                            self.GearShifter.park))
+      self.brakehold_condition_satisfied = ret.standstill and ret.cruiseState.available and not ret.gasPressed and not \
+                                           ret.cruiseState.enabled and (ret.gearShifter not in (self.GearShifter.reverse,
+                                           self.GearShifter.park))
       self.slope_angle = cp.vl["VSC1S07"]["ASLP"] # filtered pitch estimate from the car, negative is a downward slope
       if self.brakehold_condition_satisfied and self.slope_angle > -3:
         if self.brakehold_condition_counter > self.time_to_brakehold and not self.reset_brakehold:
