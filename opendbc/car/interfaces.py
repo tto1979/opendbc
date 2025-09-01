@@ -258,10 +258,10 @@ class CarInterfaceBase(ABC):
   CarController: 'CarControllerBase'
   RadarInterface: 'RadarInterfaceBase' = RadarInterfaceBase
 
-  def __init__(self, CP: structs.CarParams):
+  def __init__(self, CP: structs.CarParams, top_params: int = 0):
     self.CP = CP
     eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
-    self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware) and top_params & structs.TopFlags.NNFF
+    self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware) and bool(top_params & structs.TopFlags.NNFF)
 
     self.frame = 0
     self.v_ego_cluster_seen = False
