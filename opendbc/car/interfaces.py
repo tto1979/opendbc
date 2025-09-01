@@ -305,7 +305,7 @@ class CarInterfaceBase(ABC):
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
                  alpha_long: bool, is_release: bool, top_params: int, docs: bool) -> structs.CarParams:
-    ret = CarInterfaceBase.get_std_params(candidate)
+    ret = CarInterfaceBase.get_std_params(candidate, top_params)
 
     platform = PLATFORMS[candidate]
     ret.mass = platform.config.specs.mass
@@ -382,7 +382,7 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate: str) -> structs.CarParams:
+  def get_std_params(candidate: str, top_params: int = 0) -> structs.CarParams:
     ret = structs.CarParams()
     ret.carFingerprint = candidate
 
