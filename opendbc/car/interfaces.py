@@ -413,7 +413,7 @@ class CarInterfaceBase(ABC):
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
     ret.experimentalModeViaWheel = True
-    ret.twilsoncoNNFF = top_params & structs.TopFlags.NNFF
+    ret.twilsoncoNNFF = bool(top_params & structs.TopFlags.NNFF)
     return ret
 
   @staticmethod
