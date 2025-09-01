@@ -1,5 +1,4 @@
 import copy
-from cereal import custom
 
 from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
@@ -12,7 +11,7 @@ from opendbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
-AccelPersonality = custom.LongitudinalPlanTOP.AccelerationPersonality
+
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
 # - lka/lta msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3.
@@ -23,6 +22,13 @@ TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 # - lka/lta msg drop out: 3 (recoverable)
 # - prolonged high driver torque: 17 (permanent)
 PERM_STEER_FAULTS = (3, 17)
+
+
+class AccelPersonality:
+    sport = 0
+    normal = 1
+    eco = 2
+    stock = 3
 
 
 class CarState(CarStateBase):
