@@ -1,7 +1,7 @@
 import copy
 from cereal import custom
-from openpilot.common.params import Params
 
+from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
@@ -74,7 +74,7 @@ class CarState(CarStateBase):
       self.params.put_bool("UserExperimentalMode", user_exp_mode)
 
     # bsm
-    self.toyota_bsm = Params().get_bool("toyota_bsm")
+    self.toyota_bsm = self.CP.flags & ToyotaFlags.BSM.value
     self.left_blindspot = False
     self.left_blindspot_d1 = 0
     self.left_blindspot_d2 = 0
@@ -94,10 +94,10 @@ class CarState(CarStateBase):
     self.accel_profile = None
     self.prev_accel_profile = None
     self.accel_profile_init = False
-    self.toyota_drive_mode = Params().get_bool('ToyotaDriveMode')
+    self.toyota_drive_mode = self.CP.flags & ToyotaFlags.DRIVE_MODE.value
 
     # AleSato's automatic brakehold
-    self.AutomaticBrakeHold = self.params.get_bool('AleSato_AutomaticBrakeHold')
+    self.AutomaticBrakeHold = self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value
     self.time_to_brakehold = 100 * 1   # 1 seconds stopped to activate
     self.GearShifter = structs.CarState.GearShifter # avoid Rear and Park gears
     self.stock_aeb = {}

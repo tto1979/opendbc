@@ -1,4 +1,3 @@
-from openpilot.common.params import Params
 from opendbc.car import Bus, structs, get_safety_config, uds
 from opendbc.car.toyota.carstate import CarState
 from opendbc.car.toyota.carcontroller import CarController
@@ -184,7 +183,7 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
 
-    if Params().get_bool("ToyotaTune") & (ret.flags & ToyotaFlags.SMART_DSU):
+    if top_params & structs.TopFlags.ToyotaTSSPTune & (ret.flags & ToyotaFlags.SMART_DSU):
       ret.stoppingDecelRate = 0.25  # reach stopping target smoothly
       ret.longitudinalTuning.kiBP = [0., 10.]
       ret.longitudinalTuning.kiV = [1.4, 1.2]
@@ -195,7 +194,7 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
 
-      if Params().get_bool("ToyotaTune"):
+      if top_params & structs.TopFlags.ToyotaTSSPTune:
         ret.longitudinalTuning.kiV = [1.2]
         ret.stoppingDecelRate = 0.15   # reach stopping target smoothly
         if candidate == CAR.TOYOTA_RAV4_TSS2:
@@ -208,6 +207,33 @@ class CarInterface(CarInterfaceBase):
     # Hybrids have much quicker longitudinal actuator response
     if ret.flags & ToyotaFlags.HYBRID.value:
       ret.longitudinalActuatorDelay = 0.05
+
+    if top_params & structs.TopFlags.ToyotaTSSPTune:
+      ret.flags |= ToyotaFlags.TSSP_TUNE.value
+
+    if top_params & structs.TopFlags.ToyotaAutoLock:
+      ret.flags |= ToyotaFlags.AUTO_LOCK.value
+
+    if top_params & structs.TopFlags.ToyotaAutoUnlock:
+      ret.flags |= ToyotaFlags.AUTO_UNLOCK.value
+
+    if top_params & structs.TopFlags.ToyotaReverseAccChange:
+      ret.flags |= ToyotaFlags.REVERSE_ACC_CHANGE.value
+
+    if top_params & structs.TopFlags.ToyotaTSSPSNG:
+      ret.flags |= ToyotaFlags.TSSP_SNG.value
+
+    if top_params & structs.TopFlags.ToyotaBSM:
+      ret.flags |= ToyotaFlags.BSM.value
+
+    if top_params & structs.TopFlags.ToyotaAutoBrakeHold:
+      ret.flags |= ToyotaFlags.AUTO_BRAKE_HOLD.value
+
+    if top_params & structs.TopFlags.ToyotaExperimentalMode:
+      ret.flags |= ToyotaFlags.EXPERIMENTAL_MODE.value
+
+    if top_params & structs.TopFlags.ToyotaDriveMode:
+      ret.flags |= ToyotaFlags.DRIVE_MODE.value
 
     return ret
 

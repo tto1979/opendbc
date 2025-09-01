@@ -82,7 +82,15 @@ class ToyotaFlags(IntFlag):
   RADAR_FILTER = 2 ** 12
   ALKA = 2 ** 13
   ZSS = 2 ** 14
-
+  TSSP_TUNE = 2 ** 15
+  AUTO_LOCK = 2 ** 16
+  AUTO_UNLOCK = 2 ** 17
+  REVERSE_ACC_CHANGE = 2 ** 18
+  TSSP_SNG = 2 ** 19
+  BSM = 2 ** 20
+  AUTO_BRAKE_HOLD = 2 ** 21
+  EXPERIMENTAL_MODE = 2 ** 22
+  DRIVE_MODE = 2 ** 23
 
 def dbc_dict(pt, radar):
   return {Bus.pt: pt, Bus.radar: radar}

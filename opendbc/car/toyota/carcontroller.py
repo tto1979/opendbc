@@ -12,7 +12,6 @@ from opendbc.car.toyota import toyotacan
 from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         CarControllerParams, ToyotaFlags, \
                                         UNSUPPORTED_DSU_CAR, RADAR_ACC_CAR
-from openpilot.common.params import Params
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.can import CANPacker
 
@@ -69,7 +68,7 @@ def poll_blindspot_status(lr):
 
 
 def get_long_tune(CP, params):
-  if Params().get_bool("ToyotaTune"):
+  if CP.flags & ToyotaFlags.TSSP_TUNE.value:
     kiBP = [0., 5., 35.]
     kiV = [3.6, 2.4, 1.5]
     if CP.carFingerprint in TSS2_CAR:
@@ -118,13 +117,14 @@ class CarController(CarControllerBase):
     self.secoc_lta_message_counter = 0
     self.secoc_prev_reset_counter = 0
 
-    self.toyotaautolock = Params().get_bool("toyotaautolock")
-    self.toyotaautounlock = Params().get_bool("toyotaautounlock")
+    self.toyotaautolock = self.CP.flags & ToyotaFlags.AUTO_LOCK.value
+    self.toyotaautounlock = self.CP.flags & ToyotaFlags.AUTO_UNLOCK.value
     self.last_gear = GearShifter.park
     self.lock_once = False
-    self._reverse_acc_change = Params().get_bool("ReverseAccChange")
-    self.topsng = Params().get_bool("topsng")
-    self.toyota_bsm = Params().get_bool("toyota_bsm")
+    self.ToyotaTune = self.CP.flags & ToyotaFlags.TSSP_TUNE.value
+    self._reverse_acc_change = self.CP.flags & ToyotaFlags.REVERSE_ACC_CHANGE.value
+    self.topsng = self.CP.flags & ToyotaFlags.TSSP_SNG.value
+    self.toyota_bsm = self.CP.flags & ToyotaFlags.BSM.value
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
     self.blindspot_frame = 0
@@ -295,7 +295,7 @@ class CarController(CarControllerBase):
     self.standstill_req = self._standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng
 
     # AleSato's Automatic Brake Hold
-    if Params().get_bool("AleSato_AutomaticBrakeHold") and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
+    if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
        and not (self.CP.flags & ToyotaFlags.SECOC.value) and (self.CP.flags & ToyotaFlags.HYBRID.value) and self.frame % 2 == 0:
       if CS.out.brakeholdGovernor:
         can_sends.append(toyotacan.create_brakehold_command(self.packer, {}, True if self.frame % 730 < 727 else False))
@@ -311,7 +311,6 @@ class CarController(CarControllerBase):
     if self.frame % (UI_HYSTERESIS_TIME / DT_CTRL) == 0:
       self.lead = hud_control.leadVisible
     reverse_acc = 2 if self._reverse_acc_change else 1
-    self.ToyotaTune = Params().get_bool("ToyotaTune")
 
     if self.CP.openpilotLongitudinalControl:
       if self.frame % 3 == 0:

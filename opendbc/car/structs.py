@@ -22,4 +22,14 @@ CarParamsT = capnp.lib.capnp._StructModule
 
 class TopFlags:
   LateralALKA = 1
-  ToyotaStockLong = 2
+  NNFF = 2
+  ToyotaStockLong = 2 ** 2
+  ToyotaTSSPTune = 2 ** 3
+  ToyotaAutoLock = 2 ** 4
+  ToyotaAutoUnlock = 2 ** 5
+  ToyotaReverseAccChange = 2 ** 6
+  ToyotaTSSPSNG = 2 ** 7
+  ToyotaBSM = 2 ** 8
+  ToyotaAutoBrakeHold = 2 ** 9
+  ToyotaExperimentalMode = 2 ** 10
+  ToyotaDriveMode = 2 ** 11

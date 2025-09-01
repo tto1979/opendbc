@@ -10,7 +10,6 @@ from typing import Any
 from collections.abc import Callable
 from functools import cache
 
-from openpilot.common.params import Params
 from opendbc.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
@@ -262,7 +261,7 @@ class CarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
     eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
-    self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware) and Params().get_bool("NNFF")
+    self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware) and top_params & structs.TopFlags.NNFF
 
     self.frame = 0
     self.v_ego_cluster_seen = False
@@ -321,7 +320,7 @@ class CarInterfaceBase(ABC):
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, alpha_long, is_release, top_params, docs)
 
     if ret.steerControlType != structs.CarParams.SteerControlType.angle:
-      if Params().get_bool("NNFF"):
+      if top_params & structs.TopFlags.NNFF:
         ret = CarInterfaceBase.top_configure_torque_tune(candidate, ret)
 
     if ret.lateralTuning.which() == 'torque':
@@ -413,9 +412,8 @@ class CarInterfaceBase(ABC):
     # TODO estimate car specific lag, use .15s for now
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
-    params = Params()
     ret.experimentalModeViaWheel = True
-    ret.twilsoncoNNFF = params.get_bool("NNFF")
+    ret.twilsoncoNNFF = top_params & structs.TopFlags.NNFF
     return ret
 
   @staticmethod
