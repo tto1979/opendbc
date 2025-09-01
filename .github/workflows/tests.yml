@@ -22,7 +22,7 @@ jobs:
       id: cache
     - uses: commaai/timeout@v1
       with:
-        timeout: ${{ github.repository == 'commaai/opendbc' && (steps.cache.outputs.cache-hit == 'true' && '120' || '180') || '999' }}
+        timeout: ${{ github.repository == 'commaai/opendbc' && (steps.cache.outputs.cache-hit == 'true' && '60' || '90') || '999' }}
     - run: ./test.sh
 
   safety_tests:
@@ -34,6 +34,8 @@ jobs:
         flags: ['--ubsan']
     steps:
     - uses: commaai/timeout@v1
+      with:
+        timeout: ${{ github.repository == 'commaai/opendbc' && '300' || '999' }}  # ²K¥[³o¦æ
     - uses: actions/checkout@v4
     - uses: ./.github/workflows/cache
     - name: Run safety tests
