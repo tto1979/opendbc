@@ -209,9 +209,6 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & ToyotaFlags.HYBRID.value:
       ret.longitudinalActuatorDelay = 0.05
 
-    if top_params & structs.TopFlags.AccelPersonality:
-      ret.flags |= ToyotaFlags.ACCEL_PERSONALITY.value
-
     return ret
 
   @staticmethod

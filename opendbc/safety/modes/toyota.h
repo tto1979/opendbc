@@ -192,8 +192,6 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
 }
 
 static bool toyota_tx_hook(const CANPacket_t *msg) {
-  bool sport_mode = (alternative_experience & ALT_EXP_RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX) != 0;
-
   const TorqueSteeringLimits TOYOTA_TORQUE_STEERING_LIMITS = {
     .max_torque = 1500,
     .max_rate_up = 15,          // ramp up slow
@@ -234,11 +232,6 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
     .min_accel = -3500,  // -3.5 m/s2
   };
 
-  const LongitudinalLimits TOYOTA_LONG_LIMITS_SPORT = {
-    .max_accel = 4000,   // 4.0 m/s2
-    .min_accel = -3500,  // -3.5 m/s2
-  };
-
   bool tx = true;
 
   // Check if msg is sent on BUS 0
@@ -249,11 +242,7 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       desired_accel = to_signed(desired_accel, 16);
 
       bool violation = false;
-      if (sport_mode) {
-        violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS_SPORT);
-      } else {
-        violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
-      }
+      violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
 
       // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
       if (toyota_stock_longitudinal) {

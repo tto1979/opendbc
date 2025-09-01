@@ -22,5 +22,4 @@ CarParamsT = capnp.lib.capnp._StructModule
 
 class TopFlags:
   LateralALKA = 1
-  AccelPersonality = 2
-  ToyotaStockLong = 2 ** 2
+  ToyotaStockLong = 2

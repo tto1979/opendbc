@@ -36,10 +36,10 @@ class CarControllerParams:
   MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
   def __init__(self, CP):
-    if CP.flags & ToyotaFlags.ACCEL_PERSONALITY:
-      self.ACCEL_MAX = 3.0
+    if CP.flags & ToyotaFlags.RAISED_ACCEL_LIMIT or CP.flags & ToyotaFlags.SMART_DSU.value:
+      self.ACCEL_MAX = 2.0
     else:
-      self.ACCEL_MAX = 2.0  # m/s2, lower than allowed 2.0 m/s^2 for tuning reasons
+      self.ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s^2 for tuning reasons
     self.ACCEL_MIN = -3.5  # m/s2
 
     if CP.lateralTuning.which() == 'torque':
@@ -81,8 +81,7 @@ class ToyotaFlags(IntFlag):
   SECOC = 2048
   RADAR_FILTER = 2 ** 12
   ALKA = 2 ** 13
-  ACCEL_PERSONALITY = 2 ** 14
-  ZSS = 2 ** 15
+  ZSS = 2 ** 14
 
 
 def dbc_dict(pt, radar):
