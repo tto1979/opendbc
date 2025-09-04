@@ -35,7 +35,7 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
       with:
-        timeout: ${{ github.repository == 'commaai/opendbc' && '300' || '999' }}  # ²K¥[³o¦æ
+        timeout: ${{ github.repository == 'commaai/opendbc' && '300' || '999' }}
     - uses: actions/checkout@v4
     - uses: ./.github/workflows/cache
     - name: Run safety tests
