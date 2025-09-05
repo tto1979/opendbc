@@ -1,6 +1,5 @@
 import copy
 
-from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
@@ -60,8 +59,6 @@ class CarState(CarStateBase):
     self.gvc = 0.0
     self.secoc_synchronization = None
 
-    self.params = Params()
-
     # zss
     if self.CP.flags & ToyotaFlags.ZSS.value:
       from opendbc.car.toyota.zss import ZSS
@@ -69,15 +66,7 @@ class CarState(CarStateBase):
     else:
       self.zss = None
 
-    # Change between chill/experimental mode using steering wheel
     self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
-    self.ispressed_prev = False
-    self.distance_button_hold = 0
-    self.gap_button_counter = 0
-    self.short_press_button_counter = 0
-    if self.params.get("UserExperimentalMode") is None:
-      user_exp_mode = self.params.get_bool("ExperimentalMode")
-      self.params.put_bool("UserExperimentalMode", user_exp_mode)
 
     # bsm
     self.toyota_bsm = self.CP.flags & ToyotaFlags.BSM.value
@@ -181,7 +170,7 @@ class CarState(CarStateBase):
 
       # If not initialized, sync profile with the current mode on the car
       if not self.accel_profile_init or self.accel_profile != self.prev_accel_profile:
-        Params().put_nonblocking('AccelPersonality', self.accel_profile)
+        Params().put_nonblocking('AccelPersonality', int(self.accel_profile))
         self.accel_profile_init = True
         # Update the previous profile to prevent unnecessary re-syncing
         self.prev_accel_profile = self.accel_profile
@@ -315,8 +304,7 @@ class CarState(CarStateBase):
 
       if self.CP.carFingerprint not in RADAR_ACC_CAR:
         # distance button is wired to the ACC module (camera or radar)
-        # prev_distance_button = self.distance_button
-        prev_distance_button = self.distance_button_hold
+        prev_distance_button = self.distance_button
         if self.CP.carFingerprint in TSS2_CAR:
           self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
         else:
@@ -324,25 +312,6 @@ class CarState(CarStateBase):
 
         buttonEvents += create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
     ret.buttonEvents = buttonEvents
-
-    # change experimental/chill mode on fly with long press
-    if self.distance_button:
-      self.short_press_button_counter += 1
-      if not self.distance_button_hold:
-        self.gap_button_counter += 1
-        if self.gap_button_counter > 150:
-          new_exp_mode = not self.params.get_bool("ExperimentalMode")
-          self.params.put_bool_nonblocking('ExperimentalMode', new_exp_mode)
-          self.params.put_bool_nonblocking('UserExperimentalMode', new_exp_mode)
-          self.gap_button_counter = 0
-
-    if not self.distance_button and self.ispressed_prev and self.short_press_button_counter < 50:
-      self.distance_button_hold = True
-
-    if not self.ispressed_prev and not self.distance_button:
-      self.distance_button_hold = False
-      self.short_press_button_counter = 0
-    self.ispressed_prev = self.distance_button
 
     ret.steeringWheelCar = True if self.CP.brand == "toyota" else False
 
