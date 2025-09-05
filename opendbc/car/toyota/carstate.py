@@ -1,5 +1,6 @@
 import copy
 
+from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
