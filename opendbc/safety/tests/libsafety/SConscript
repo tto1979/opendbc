@@ -24,7 +24,7 @@ env = Environment(
     '-Wno-pointer-to-int-cast',
     '-g',
     '-O0',
-    "-fno-omit-frame-pointer"
+    "-fno-omit-frame-pointer",
     '-DCANFD',
   ],
   CPPPATH=["#", "../../board/"],
