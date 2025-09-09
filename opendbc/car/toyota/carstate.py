@@ -1,6 +1,5 @@
 import copy
 
-from openpilot.common.params import Params
 from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, DT_CTRL, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
@@ -89,7 +88,6 @@ class CarState(CarStateBase):
     self.eco_signal_seen = False
     self.accel_profile = None
     self.prev_accel_profile = None
-    self.accel_profile_init = False
     self.toyota_drive_mode = self.CP.flags & ToyotaFlags.DRIVE_MODE.value
 
     # AleSato's automatic brakehold
@@ -169,12 +167,8 @@ class CarState(CarStateBase):
       else:
         self.accel_profile = AccelPersonality.normal
 
-      # If not initialized, sync profile with the current mode on the car
-      if not self.accel_profile_init or self.accel_profile != self.prev_accel_profile:
-        Params().put_nonblocking('AccelPersonality', int(self.accel_profile))
-        self.accel_profile_init = True
-        # Update the previous profile to prevent unnecessary re-syncing
-        self.prev_accel_profile = self.accel_profile
+      ret.toyotaDriveMode = bool(self.toyota_drive_mode)
+      ret.accelProfile = self.accel_profile
 
     self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
