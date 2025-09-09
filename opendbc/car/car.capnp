@@ -240,6 +240,7 @@ struct CarState {
   blindspotside @66 :Float32;
   distanceLines @67 :UInt8;
   brakeholdGovernor @68 :Bool;
+  accelProfile @69 :UInt8;
 
   struct WheelSpeeds {
     # optional wheel speeds
