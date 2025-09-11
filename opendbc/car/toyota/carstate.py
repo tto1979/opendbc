@@ -167,7 +167,6 @@ class CarState(CarStateBase):
       else:
         self.accel_profile = AccelPersonality.normal
 
-      ret.toyotaDriveMode = bool(self.toyota_drive_mode)
       ret.accelProfile = self.accel_profile
 
     self.parse_wheel_speeds(ret,
