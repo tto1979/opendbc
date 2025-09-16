@@ -195,12 +195,13 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStarting = 0.25
 
       if top_params & structs.TopFlags.ToyotaTSSPTune:
-        ret.longitudinalTuning.kiV = [1.2]
+        ret.longitudinalTuning.kiBP = [0., 10.]
+        ret.longitudinalTuning.kiV = [1.4, 1.2]
         ret.stoppingDecelRate = 0.15   # reach stopping target smoothly
         if candidate == CAR.TOYOTA_RAV4_TSS2:
           ret.stoppingDecelRate = 0.3  # optimal on rav4
       else:
-        ret.stoppingDecelRate = 0.07  # reach stopping target smoothly
+        ret.stoppingDecelRate = 0.01  # reach stopping target smoothly
         if candidate == CAR.TOYOTA_RAV4_TSS2:
           ret.stoppingDecelRate = 0.3  # optimal on rav4
 
