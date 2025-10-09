@@ -471,12 +471,12 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
   def test_aeb_auto_brake_hold(self):
     pass
 
-  def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = False):
+  def test_diagnostics(self):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
                            (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present
-                           (True, b"\x0F\x02\x3E\x00\x00\x00\x00\x00")):
+                           (False, b"\x0F\x02\x3E\x00\x00\x00\x00\x00")):  # tester present - also blocked
       tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
-      self.assertEqual(should_tx and ecu_disabled and not stock_longitudinal, self._tx(tester_present))
+      self.assertEqual(should_tx, self._tx(tester_present))
 
   def test_343_actuation_blocked(self):
     """
