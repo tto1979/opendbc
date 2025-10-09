@@ -84,10 +84,10 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
 
     if is_unsupported_dsu:
       values = {"MAIN_ON": enabled}
-      return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+      return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
     else:
       values = {"MAIN_ON": enabled}
-      return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
+      return self.packer.make_can_msg_safety("PCM_CRUISE_2", 0, values)
 
   def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = True):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
