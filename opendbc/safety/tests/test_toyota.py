@@ -467,6 +467,13 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
   def test_block_aeb(self, stock_longitudinal: bool = False):
     pass
 
+  @unittest.skip("test not applicable for cars without a DSU")
+  def test_aeb_auto_brake_hold(self):
+    pass
+
+  def test_diagnostics(self, ecu_disabled: bool = False):
+    super().test_diagnostics(ecu_disabled=ecu_disabled)
+
   def test_343_actuation_blocked(self):
     """
     For SecOC cars, longitudinal acceleration must be sent in ACC_CONTROL_2, but all other ACC
