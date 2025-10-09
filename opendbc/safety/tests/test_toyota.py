@@ -492,7 +492,7 @@ class TestToyotaUnsupportedDSUCarSafety(TestToyotaSafetyTorque):
   def _acc_state_msg(self, enabled):
     # Override for unsupported DSU cars - always use DSU_CRUISE
     values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+    return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
 
 
 class TestToyotaAltBrakeUnsupportedDSUCarSafety(TestToyotaAltBrakeSafety):
@@ -508,7 +508,7 @@ class TestToyotaAltBrakeUnsupportedDSUCarSafety(TestToyotaAltBrakeSafety):
   def _acc_state_msg(self, enabled):
     # Override for unsupported DSU cars - always use DSU_CRUISE
     values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+    return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
 
 
 class TestToyotaSDSUSafety(TestToyotaSafetyTorque):
