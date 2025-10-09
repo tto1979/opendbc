@@ -484,7 +484,7 @@ class TestToyotaUnsupportedDSUCarSafety(TestToyotaSafetyTorque):
   """Test class for Toyota cars with unsupported DSU configuration"""
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
+    self.packer = CANPackerSafety("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | UNSUPPORTED_DSU)
     self.safety.init_tests()
@@ -499,7 +499,7 @@ class TestToyotaAltBrakeUnsupportedDSUCarSafety(TestToyotaAltBrakeSafety):
   """Test class for Toyota cars with both alternate brake and unsupported DSU configuration"""
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
+    self.packer = CANPackerSafety("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota,
                                  self.EPS_SCALE | ToyotaSafetyFlags.ALT_BRAKE | UNSUPPORTED_DSU)
@@ -519,7 +519,7 @@ class TestToyotaSDSUSafety(TestToyotaSafetyTorque):
   FWD_BLACKLISTED_ADDRS = {2: [0x2E4, 0x412, 0x191]}  # Exclude 0x343 for SDSU
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
+    self.packer = CANPackerSafety("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
     # SDSU flag is 32UL << 8 = 8192 = 0x2000
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | 0x2000)
