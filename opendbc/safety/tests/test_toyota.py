@@ -472,9 +472,9 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
     pass
 
   def test_diagnostics(self):
-    for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
-                           (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present
-                           (False, b"\x0F\x02\x3E\x00\x00\x00\x00\x00")):  # tester present - also blocked
+    for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present - blocked
+                           (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present - blocked
+                           (True, b"\x0F\x02\x3E\x00\x00\x00\x00\x00")):  # radar tester present - ALLOWED
       tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
       self.assertEqual(should_tx, self._tx(tester_present))
 
