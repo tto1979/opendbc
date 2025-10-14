@@ -84,10 +84,10 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
 
     if is_unsupported_dsu:
       values = {"MAIN_ON": enabled}
-      return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+      return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
     else:
       values = {"MAIN_ON": enabled}
-      return self.packer.make_can_msg_panda("PCM_CRUISE_2", 0, values)
+      return self.packer.make_can_msg_safety("PCM_CRUISE_2", 0, values)
 
   def test_diagnostics(self, stock_longitudinal: bool = False, ecu_disabled: bool = True):
     for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present
@@ -467,6 +467,17 @@ class TestToyotaSecOcSafety(TestToyotaSecOcSafetyBase):
   def test_block_aeb(self, stock_longitudinal: bool = False):
     pass
 
+  @unittest.skip("test not applicable for cars without a DSU")
+  def test_aeb_auto_brake_hold(self):
+    pass
+
+  def test_diagnostics(self):
+    for should_tx, msg in ((False, b"\x6D\x02\x3E\x00\x00\x00\x00\x00"),  # fwdCamera tester present - blocked
+                           (False, b"\x0F\x03\xAA\xAA\x00\x00\x00\x00"),  # non-tester present - blocked
+                           (True, b"\x0F\x02\x3E\x00\x00\x00\x00\x00")):  # radar tester present - ALLOWED
+      tester_present = libsafety_py.make_CANPacket(0x750, 0, msg)
+      self.assertEqual(should_tx, self._tx(tester_present))
+
   def test_343_actuation_blocked(self):
     """
     For SecOC cars, longitudinal acceleration must be sent in ACC_CONTROL_2, but all other ACC
@@ -484,7 +495,7 @@ class TestToyotaUnsupportedDSUCarSafety(TestToyotaSafetyTorque):
   """Test class for Toyota cars with unsupported DSU configuration"""
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
+    self.packer = CANPackerSafety("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | UNSUPPORTED_DSU)
     self.safety.init_tests()
@@ -492,14 +503,14 @@ class TestToyotaUnsupportedDSUCarSafety(TestToyotaSafetyTorque):
   def _acc_state_msg(self, enabled):
     # Override for unsupported DSU cars - always use DSU_CRUISE
     values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+    return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
 
 
 class TestToyotaAltBrakeUnsupportedDSUCarSafety(TestToyotaAltBrakeSafety):
   """Test class for Toyota cars with both alternate brake and unsupported DSU configuration"""
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_new_mc_pt_generated")
+    self.packer = CANPackerSafety("toyota_new_mc_pt_generated")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota,
                                  self.EPS_SCALE | ToyotaSafetyFlags.ALT_BRAKE | UNSUPPORTED_DSU)
@@ -508,7 +519,7 @@ class TestToyotaAltBrakeUnsupportedDSUCarSafety(TestToyotaAltBrakeSafety):
   def _acc_state_msg(self, enabled):
     # Override for unsupported DSU cars - always use DSU_CRUISE
     values = {"MAIN_ON": enabled}
-    return self.packer.make_can_msg_panda("DSU_CRUISE", 0, values)
+    return self.packer.make_can_msg_safety("DSU_CRUISE", 0, values)
 
 
 class TestToyotaSDSUSafety(TestToyotaSafetyTorque):
@@ -519,7 +530,7 @@ class TestToyotaSDSUSafety(TestToyotaSafetyTorque):
   FWD_BLACKLISTED_ADDRS = {2: [0x2E4, 0x412, 0x191]}  # Exclude 0x343 for SDSU
 
   def setUp(self):
-    self.packer = CANPackerPanda("toyota_nodsu_pt_generated")
+    self.packer = CANPackerSafety("toyota_nodsu_pt_generated")
     self.safety = libsafety_py.libsafety
     # SDSU flag is 32UL << 8 = 8192 = 0x2000
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE | 0x2000)
