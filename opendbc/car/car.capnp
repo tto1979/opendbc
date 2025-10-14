@@ -578,8 +578,8 @@ struct CarParams {
     useSteeringAngleDEPRECATED @0 :Bool;
 
     #TOP
-    nnModelName @8 :Text;
-    nnModelFuzzyMatch @9 :Bool;
+    nnModelName @9 :Text;
+    nnModelFuzzyMatch @10 :Bool;
   }
 
   struct LongitudinalPIDTuning {
