@@ -159,12 +159,9 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
 
-    if ret.flags & ToyotaFlags.SECOC.value:
-      ret.openpilotLongitudinalControl = False
-    else:
-      ret.openpilotLongitudinalControl = ret.enableDsu or \
-        candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
-        bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value) or \
+    ret.openpilotLongitudinalControl = ret.enableDsu or \
+      candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
+      bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value) or \
         sdsu_active
 
     if top_params & structs.TopFlags.ToyotaStockLong:

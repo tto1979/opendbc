@@ -1,6 +1,6 @@
 #pragma once
 
-#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/declarations.h"
 
 // Stock longitudinal
 #define TOYOTA_BASE_TX_MSGS \
@@ -14,7 +14,7 @@
 #define TOYOTA_COMMON_SECOC_TX_MSGS \
   TOYOTA_BASE_TX_MSGS \
   {0x2E4, 0, 8, .check_relay = true}, {0x131, 0, 8, .check_relay = true}, \
-  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */  \
+  {0x343, 0, 8, .check_relay = false},  /* ACC cancel cmd */ \
 
 #define TOYOTA_COMMON_LONG_TX_MSGS \
   TOYOTA_COMMON_TX_MSGS \
@@ -30,6 +30,11 @@
   {0x750, 0, 8, .check_relay = false}, \
   /* ACC */                            \
   {0x343, 0, 8, .check_relay = true},  \
+
+#define TOYOTA_COMMON_SECOC_LONG_TX_MSGS \
+  TOYOTA_COMMON_SECOC_TX_MSGS \
+  {0x343, 0, 8, .check_relay = true}, \
+  {0x183, 0, 8, .check_relay = true},  /* ACC_CONTROL_2 */ \
 
 #define TOYOTA_COMMON_LONG_TX_MSGS_SDSU \
   TOYOTA_COMMON_TX_MSGS \
@@ -243,6 +248,10 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       desired_accel = to_signed(desired_accel, 16);
 
       bool violation = false;
+      if (toyota_secoc) {
+        // SecOC cars move accel to 0x183. Only allow inactive accel on 0x343 to match stock behavior
+        violation = desired_accel != TOYOTA_LONG_LIMITS.inactive_accel;
+      }
       violation |= longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
 
       // only ACC messages that cancel are allowed when openpilot is not controlling longitudinal
@@ -259,6 +268,13 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
       if (violation) {
         tx = false;
       }
+    }
+
+    if (msg->addr == 0x183U) {
+      int desired_accel = (msg->data[0] << 8) | msg->data[1];
+      desired_accel = to_signed(desired_accel, 16);
+
+      tx = !longitudinal_accel_checks(desired_accel, TOYOTA_LONG_LIMITS);
     }
 
     // AEB: block all actuation. only used when DSU is unplugged
@@ -306,12 +322,12 @@ static bool toyota_tx_hook(const CANPacket_t *msg) {
         }
 
         // check if we should wind down torque
-        int driver_torque = MIN(ABS(torque_driver.min), ABS(torque_driver.max));
+        int driver_torque = SAFETY_MIN(SAFETY_ABS(torque_driver.min), SAFETY_ABS(torque_driver.max));
         if ((driver_torque > TOYOTA_LTA_MAX_DRIVER_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
 
-        int eps_torque = MIN(ABS(torque_meas.min), ABS(torque_meas.max));
+        int eps_torque = SAFETY_MIN(SAFETY_ABS(torque_meas.min), SAFETY_ABS(torque_meas.max));
         if ((eps_torque > TOYOTA_LTA_MAX_MEAS_TORQUE) && (torque_wind_down != 0)) {
           tx = false;
         }
@@ -397,6 +413,11 @@ static safety_config toyota_init(uint16_t param) {
     TOYOTA_COMMON_LONG_TX_MSGS
   };
 
+
+  static const CanMsg TOYOTA_SECOC_LONG_TX_MSGS[] = {
+    TOYOTA_COMMON_SECOC_LONG_TX_MSGS
+  };
+
   static const CanMsg TOYOTA_LONG_TX_MSGS_SDSU[] = {
     TOYOTA_COMMON_LONG_TX_MSGS_SDSU
   };
@@ -425,18 +446,22 @@ static safety_config toyota_init(uint16_t param) {
   toyota_unsupported_dsu_car = GET_FLAG(param, TOYOTA_PARAM_UNSUPPORTED_DSU_CAR);
 
   safety_config ret;
-  if (toyota_stock_longitudinal) {
-    if (toyota_secoc) {
+  if (toyota_secoc) {
+    if (toyota_stock_longitudinal) {
       SET_TX_MSGS(TOYOTA_SECOC_TX_MSGS, ret);
     } else {
-      SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
+      SET_TX_MSGS(TOYOTA_SECOC_LONG_TX_MSGS, ret);
     }
   } else {
-    // Conditionally update the relay check for ACC (0x343) message based on SDSU status
-    if (toyota_sdsu) {
-      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS_SDSU, ret);
+    if (toyota_stock_longitudinal) {
+      SET_TX_MSGS(TOYOTA_TX_MSGS, ret);
     } else {
-      SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+      // Conditionally update the relay check for ACC (0x343) message based on SDSU status
+      if (toyota_sdsu) {
+        SET_TX_MSGS(TOYOTA_LONG_TX_MSGS_SDSU, ret);
+      } else {
+        SET_TX_MSGS(TOYOTA_LONG_TX_MSGS, ret);
+      }
     }
   }
 
