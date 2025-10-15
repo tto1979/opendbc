@@ -98,7 +98,7 @@ int get_current_safety_param(void){
 }
 
 void set_timer(uint32_t t){
-  timer_cnt = t;
+  timer.CNT = t;
 }
 
 void set_torque_meas(int min, int max){
