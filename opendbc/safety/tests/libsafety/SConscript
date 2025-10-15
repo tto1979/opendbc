@@ -28,7 +28,6 @@ env = Environment(
     '-fno-omit-frame-pointer',
     '-fprofile-arcs',
     '-ftest-coverage',
-    '-DALLOW_DEBUG',
   ],
   LINKFLAGS=[
     '-fprofile-arcs',
