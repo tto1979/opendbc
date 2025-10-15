@@ -8,4 +8,8 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
+AddOption('--mutation',
+          action='store_true',
+          help='generate mutation-ready code')
+
 SConscript(['SConscript'])
