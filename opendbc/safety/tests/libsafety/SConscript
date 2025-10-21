@@ -29,7 +29,6 @@ env = Environment(
     '-fprofile-arcs',
     '-ftest-coverage',
     '-DALLOW_DEBUG',
-    '-DCANFD',
   ],
   LINKFLAGS=[
     '-fprofile-arcs',
