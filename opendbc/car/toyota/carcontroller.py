@@ -344,12 +344,6 @@ class CarController(CarControllerBase):
             pcm_accel_cmd = rate_limit(pcm_accel_cmd, self.prev_accel, ACCEL_WINDDOWN_LIMIT, ACCEL_WINDUP_LIMIT)
           self.prev_accel = pcm_accel_cmd
 
-          # calculate amount of acceleration PCM should apply to reach target, given pitch.
-          # clipped to only include downhill angles, avoids erroneously unsetting PERMIT_BRAKING when stopping on uphills
-          accel_due_to_pitch = math.sin(min(self.pitch.x, 0.0)) * ACCELERATION_DUE_TO_GRAVITY
-          # TODO: on uphills this sometimes sets PERMIT_BRAKING low not considering the creep force
-          net_acceleration_request = pcm_accel_cmd + accel_due_to_pitch
-
           # GVC does not overshoot ego acceleration when starting from stop, but still has a similar delay
           if not self.CP.flags & ToyotaFlags.SECOC.value:
             a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.gvc, CS.out.aEgo]))
@@ -364,16 +358,20 @@ class CarController(CarControllerBase):
           future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
           a_ego_future = a_ego_blended + j_ego * future_t
 
-          if CC.longActive:
-            # constantly slowly unwind integral to recover from large temporary errors
-            self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
+          if not stopping:
+            # Toyota's PCM slowly responds to changes in pitch. On change, we amplify our
+            # acceleration request to compensate for the undershoot and following overshoot
+            pitch_compensation = float(np.clip(math.sin(self.pitch_hp.x) * ACCELERATION_DUE_TO_GRAVITY,
+                                               -MAX_PITCH_COMPENSATION, MAX_PITCH_COMPENSATION))
+            pcm_accel_cmd += pitch_compensation
 
             error_future = pcm_accel_cmd - a_ego_future
 
             if not stopping:
               # Toyota's PCM slowly responds to changes in pitch. On change, we amplify our
               # acceleration request to compensate for the undershoot and following overshoot
-              pitch_compensation = float(np.clip(math.sin(self.pitch_hp.x) * ACCELERATION_DUE_TO_GRAVITY,
+              high_pass_pitch = self.pitch.x - self.pitch_slow.x
+              pitch_compensation = float(np.clip(math.sin(high_pass_pitch) * ACCELERATION_DUE_TO_GRAVITY,
                                                  -MAX_PITCH_COMPENSATION, MAX_PITCH_COMPENSATION))
               pcm_accel_cmd += pitch_compensation
 
@@ -383,16 +381,6 @@ class CarController(CarControllerBase):
                                                  freeze_integrator=actuators.longControlState != LongCtrlState.pid)
           else:
             self.long_pid.reset()
-
-          # Along with rate limiting positive jerk above, this greatly improves gas response time
-          # Consider the net acceleration request that the PCM should be applying (pitch included)
-          net_acceleration_request_min = min(actuators.accel + accel_due_to_pitch, net_acceleration_request)
-          if net_acceleration_request_min < 0.2 or stopping or not CC.longActive:
-            self.permit_braking = True
-          elif net_acceleration_request_min > 0.3:
-            self.permit_braking = False
-
-          pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         main_accel_cmd = 0. if self.CP.flags & ToyotaFlags.SECOC.value else pcm_accel_cmd
         can_sends.append(toyotacan.create_accel_command(self.packer,  main_accel_cmd, actuators.accel, pcm_cancel_cmd, self.permit_braking, self.standstill_req,
