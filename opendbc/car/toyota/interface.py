@@ -182,8 +182,8 @@ class CarInterface(CarInterfaceBase):
 
     if top_params & structs.TopFlags.ToyotaTSSPTune & (ret.flags & ToyotaFlags.SMART_DSU):
       ret.stoppingDecelRate = 0.25  # reach stopping target smoothly
-      ret.longitudinalTuning.kiBP = [0., 10.]
-      ret.longitudinalTuning.kiV = [1.4, 1.2]
+      ret.longitudinalTuning.kiBP = [0., 15.]
+      ret.longitudinalTuning.kiV = [1.6, 1.2]
 
     if candidate in TSS2_CAR:
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
