@@ -350,39 +350,40 @@ class CarController(CarControllerBase):
           # TODO: on uphills this sometimes sets PERMIT_BRAKING low not considering the creep force
           net_acceleration_request = pcm_accel_cmd + accel_due_to_pitch
 
-          # GVC does not overshoot ego acceleration when starting from stop, but still has a similar delay
-          if not self.CP.flags & ToyotaFlags.SECOC.value:
-            a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.gvc, CS.out.aEgo]))
-          else:
-            a_ego_blended = CS.out.aEgo
+          if self.CP.carFingerprint in TSS2_CAR:
+            # GVC does not overshoot ego acceleration when starting from stop, but still has a similar delay
+            if not self.CP.flags & ToyotaFlags.SECOC.value:
+              a_ego_blended = float(np.interp(CS.out.vEgo, [1.0, 2.0], [CS.gvc, CS.out.aEgo]))
+            else:
+              a_ego_blended = CS.out.aEgo
 
-          # wind down integral when approaching target for step changes and smooth ramps to reduce overshoot
-          prev_aego = self.aego.x
-          self.aego.update(a_ego_blended)
-          j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 3)
+            # wind down integral when approaching target for step changes and smooth ramps to reduce overshoot
+            prev_aego = self.aego.x
+            self.aego.update(a_ego_blended)
+            j_ego = (self.aego.x - prev_aego) / (DT_CTRL * 3)
 
-          future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
-          a_ego_future = a_ego_blended + j_ego * future_t
+            future_t = float(np.interp(CS.out.vEgo, [2., 5.], [0.25, 0.5]))
+            a_ego_future = a_ego_blended + j_ego * future_t
 
-          if CC.longActive:
-            # constantly slowly unwind integral to recover from large temporary errors
-            self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
+            if CC.longActive:
+              # constantly slowly unwind integral to recover from large temporary errors
+              self.long_pid.i -= ACCEL_PID_UNWIND * float(np.sign(self.long_pid.i))
 
-            error_future = pcm_accel_cmd - a_ego_future
+              error_future = pcm_accel_cmd - a_ego_future
 
-            if not stopping:
-              # Toyota's PCM slowly responds to changes in pitch. On change, we amplify our
-              # acceleration request to compensate for the undershoot and following overshoot
-              pitch_compensation = float(np.clip(math.sin(self.pitch_hp.x) * ACCELERATION_DUE_TO_GRAVITY,
-                                                 -MAX_PITCH_COMPENSATION, MAX_PITCH_COMPENSATION))
-              pcm_accel_cmd += pitch_compensation
+              if not stopping:
+                # Toyota's PCM slowly responds to changes in pitch. On change, we amplify our
+                # acceleration request to compensate for the undershoot and following overshoot
+                pitch_compensation = float(np.clip(math.sin(self.pitch_hp.x) * ACCELERATION_DUE_TO_GRAVITY,
+                                                   -MAX_PITCH_COMPENSATION, MAX_PITCH_COMPENSATION))
+                pcm_accel_cmd += pitch_compensation
 
-            pcm_accel_cmd = self.long_pid.update(error_future,
-                                                 speed=CS.out.vEgo,
-                                                 feedforward=pcm_accel_cmd,
-                                                 freeze_integrator=actuators.longControlState != LongCtrlState.pid)
-          else:
-            self.long_pid.reset()
+              pcm_accel_cmd = self.long_pid.update(error_future,
+                                                   speed=CS.out.vEgo,
+                                                   feedforward=pcm_accel_cmd,
+                                                   freeze_integrator=actuators.longControlState != LongCtrlState.pid)
+            else:
+              self.long_pid.reset()
 
           # Along with rate limiting positive jerk above, this greatly improves gas response time
           # Consider the net acceleration request that the PCM should be applying (pitch included)
@@ -392,8 +393,6 @@ class CarController(CarControllerBase):
           elif net_acceleration_request_min > 0.3:
             self.permit_braking = False
 
-          if not self.CP.carFingerprint in TSS2_CAR:
-            pcm_accel_cmd = actuators.accel
           pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         main_accel_cmd = 0. if self.CP.flags & ToyotaFlags.SECOC.value else pcm_accel_cmd
