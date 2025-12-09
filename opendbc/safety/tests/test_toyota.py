@@ -134,7 +134,7 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
       self._rx(dsu_msg)
     else:
       # For regular cars, use PCM_CRUISE_2 message (0x1D3)
-      acc_msg_data = b"\x00\x00\x00\x00\x00\x00\x80\x00"  # bit 15 = 1 for MAIN_ON
+      acc_msg_data = b"\x00\x80\x00\x00\x00\x00\x00\x00"  # bit 15 = 1 for MAIN_ON (byte[1] bit 7)
       acc_msg = libsafety_py.make_CANPacket(0x1D3, 0, acc_msg_data)
       self._rx(acc_msg)
 
