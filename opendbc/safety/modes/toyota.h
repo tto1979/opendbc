@@ -173,8 +173,7 @@ static void toyota_rx_hook(const CANPacket_t *msg) {
     if (msg->addr == 0x1D3U) {
       // ACC main switch on is a prerequisite to enter controls, exit controls immediately on main switch off
       // Signal: PCM_CRUISE_2/MAIN_ON at 15th bit
-      bool acc_on_dbc = (GET_BIT(msg, 15U) != 0U);
-      acc_main_on = acc_on_dbc || ((GET_BYTES(msg, 6, 1) & 0x80U) != 0U);
+      acc_main_on = GET_BIT(msg, 15U) != 0U;
     }
 
     if ((msg->addr == 0x365U) && toyota_unsupported_dsu_car) {
