@@ -324,8 +324,7 @@ class CarState(CarStateBase):
           ret.brakeholdGovernor = True
         else:
           ret.brakeholdGovernor = False
-        if not self.prev_brakePressed and ret.brakePressed: # disable automatic brakehold in second brakePress
-          self.reset_brakehold = True
+
         self.brakehold_condition_counter += 1
       else:
         ret.brakeholdGovernor = False
