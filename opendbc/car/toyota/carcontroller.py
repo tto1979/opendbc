@@ -75,8 +75,8 @@ def get_long_tune(CP, params):
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
   else:
-    kiBP = [0.,  2.,  5.,  15.]
-    kiV = [0.36, 0.50, 0.23, 0.19]
+    kiBP = [2.,  4.,   8.,  12.,  27.]
+    kiV = [.45, .385, .32, .235,  .11]
 
   return PIDController(0.0, (kiBP, kiV), k_f=1.0,
                        pos_limit=params.ACCEL_MAX, neg_limit=params.ACCEL_MIN,
@@ -394,6 +394,11 @@ class CarController(CarControllerBase):
             self.permit_braking = False
 
           pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
+
+        if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and self.CP.flags & ToyotaFlags.HYBRID.value:
+          if CS.out.brakeholdGovernor and CS.out.standstill and stopping:
+            pcm_accel_cmd = 0.0
+            self.standstill_req = False
 
         main_accel_cmd = 0. if self.CP.flags & ToyotaFlags.SECOC.value else pcm_accel_cmd
         can_sends.append(toyotacan.create_accel_command(self.packer,  main_accel_cmd, actuators.accel, pcm_cancel_cmd, self.permit_braking, self.standstill_req,

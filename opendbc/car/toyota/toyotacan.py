@@ -158,7 +158,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
 
 def create_brakehold_command(packer, stock_AEB, cut3frames):
   values = {
-    "DSS1GDRV": 1023,
+    "DSS1GDRV": -2.0,
     "PBRTRGR": cut3frames,
   }
 

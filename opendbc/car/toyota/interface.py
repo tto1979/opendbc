@@ -189,7 +189,7 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
 
       ret.vEgoStopping = 0.25
-      ret.vEgoStarting = 0.25
+      ret.vEgoStarting = 0.01
 
       if top_params & structs.TopFlags.ToyotaTSSPTune:
         ret.longitudinalTuning.kiBP = [0., 10.]
@@ -198,7 +198,7 @@ class CarInterface(CarInterfaceBase):
         if candidate == CAR.TOYOTA_RAV4_TSS2:
           ret.stoppingDecelRate = 0.3  # optimal on rav4
       else:
-        ret.stoppingDecelRate = 0.01  # reach stopping target smoothly
+        ret.stoppingDecelRate = 0.03  # reach stopping target smoothly
         if candidate == CAR.TOYOTA_RAV4_TSS2:
           ret.stoppingDecelRate = 0.3  # optimal on rav4
 
