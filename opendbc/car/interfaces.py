@@ -260,6 +260,7 @@ class CarInterfaceBase(ABC):
 
   def __init__(self, CP: structs.CarParams, top_params: int = 0):
     self.CP = CP
+    self.CP_TOP = structs.CarParamsTOP()  # set by get_car() via get_params_top()
     eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
     self.has_lateral_torque_nn = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware) and bool(top_params & structs.TopFlags.NNFF)
 
@@ -323,25 +324,32 @@ class CarInterfaceBase(ABC):
       if top_params & structs.TopFlags.NNFF:
         ret = CarInterfaceBase.top_configure_torque_tune(candidate, ret)
 
-    if ret.lateralTuning.which() == 'torque':
-      eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
-      model_path, model_name, exact_match, similarity_score = get_nn_model_path(candidate, eps_firmware)
-
-      if model_path is not None:
-        ret.lateralTuning.torque.nnModelName = model_name
-        ret.lateralTuning.torque.nnModelFuzzyMatch = not exact_match
-
-        match_info = f"exact ({similarity_score:.3f})" if exact_match else f"fuzzy ({similarity_score:.3f})"
-        print(f"Torque NN model: {model_name} - {match_info}")
-      else:
-        print(f"No torque NN model available for {candidate}")
-
     if not ret.notCar:
       ret.mass = ret.mass + STD_CARGO_KG
 
     # Set params dependent on values set by the car interface
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
+
+    return ret
+
+  @staticmethod
+  def get_params_top(CP: structs.CarParams, top_params: int) -> structs.CarParamsTOP:
+    ret = structs.CarParamsTOP()
+    ret.twilsoncoNNFF = bool(top_params & structs.TopFlags.NNFF)
+
+    if CP.lateralTuning.which() == 'torque':
+      eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
+      model_path, model_name, exact_match, similarity_score = get_nn_model_path(CP.carFingerprint, eps_firmware)
+
+      if model_path is not None:
+        ret.nnModelName = model_name
+        ret.nnModelFuzzyMatch = not exact_match
+
+        match_info = f"exact ({similarity_score:.3f})" if exact_match else f"fuzzy ({similarity_score:.3f})"
+        print(f"Torque NN model: {model_name} - {match_info}")
+      else:
+        print(f"No torque NN model available for {CP.carFingerprint}")
 
     return ret
 
@@ -411,8 +419,6 @@ class CarInterfaceBase(ABC):
     # TODO estimate car specific lag, use .15s for now
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
-    ret.experimentalModeViaWheel = True
-    ret.twilsoncoNNFF = bool(top_params & structs.TopFlags.NNFF)
     return ret
 
   @staticmethod
@@ -437,6 +443,7 @@ class CarInterfaceBase(ABC):
         cp.update(can_packets)
 
     # get CarState
+    self.CS.out_top = structs.CarStateTOP()
     ret = self.CS.update(self.can_parsers)
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers.values())
@@ -468,6 +475,7 @@ class CarStateBase(ABC):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = structs.CarState()
+    self.out_top = structs.CarStateTOP()
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0

@@ -231,17 +231,6 @@ struct CarState {
   fuelGauge @41 :Float32; # battery or fuel tank level from [0.0, 1.0]
   charging @43 :Bool;
 
-  # TOP
-  steeringWheelCar @61 :Bool;
-  rightBlindspotD1 @62 :Float32;
-  rightBlindspotD2 @63 :Float32;
-  leftBlindspotD1 @64 :Float32;
-  leftBlindspotD2 @65 :Float32;
-  blindspotside @66 :Float32;
-  distanceLines @67 :UInt8;
-  brakeholdGovernor @68 :Bool;
-  accelProfile @69 :UInt8;
-
   struct WheelSpeeds {
     # optional wheel speeds
     fl @0 :Float32;
@@ -542,10 +531,6 @@ struct CarParams {
   secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
   secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
-  # TOP
-  experimentalModeViaWheel @78 :Bool;
-  twilsoncoNNFF @79 :Bool;
-
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @3 :UInt16;
@@ -576,10 +561,6 @@ struct CarParams {
     kiDEPRECATED @2 :Float32;
     kfDEPRECATED @4 :Float32;
     kdDEPRECATED @8 : Float32;
-
-    #TOP
-    nnModelName @9 :Text;
-    nnModelFuzzyMatch @10 :Bool;
   }
 
   struct LongitudinalPIDTuning {
