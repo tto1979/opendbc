@@ -67,8 +67,6 @@ class CarState(CarStateBase):
     else:
       self.zss = None
 
-    self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
-
     # bsm
     self.toyota_bsm = self.CP.flags & ToyotaFlags.BSM.value
     self.left_blindspot = False
@@ -168,7 +166,7 @@ class CarState(CarStateBase):
       else:
         self.accel_profile = AccelPersonality.normal
 
-      ret.accelProfile = self.accel_profile
+      self.out_top.accelProfile = self.accel_profile
 
     self.parse_wheel_speeds(ret,
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
@@ -307,8 +305,6 @@ class CarState(CarStateBase):
 
         buttonEvents += create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
-    ret.steeringWheelCar = True if self.CP.brand == "toyota" else False
-
     ret.buttonEvents = buttonEvents
 
     # Automatic BrakeHold
@@ -321,13 +317,13 @@ class CarState(CarStateBase):
       self.slope_angle = cp.vl["VSC1S07"]["ASLP"] # filtered pitch estimate from the car, negative is a downward slope
       if self.brakehold_condition_satisfied and self.slope_angle > -3:
         if self.brakehold_condition_counter > self.time_to_brakehold and not self.reset_brakehold:
-          ret.brakeholdGovernor = True
+          self.out_top.brakeholdGovernor = True
         else:
-          ret.brakeholdGovernor = False
+          self.out_top.brakeholdGovernor = False
 
         self.brakehold_condition_counter += 1
       else:
-        ret.brakeholdGovernor = False
+        self.out_top.brakeholdGovernor = False
         self.reset_brakehold = False
         self.brakehold_condition_counter = 0
       self.prev_brakePressed = ret.brakePressed

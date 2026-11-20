@@ -1,4 +1,6 @@
 import os
+from dataclasses import dataclass
+
 import capnp
 from opendbc.car.common.basedir import BASEDIR
 
@@ -33,3 +35,19 @@ class TopFlags:
   ToyotaAutoBrakeHold = 2 ** 9
   ToyotaExperimentalMode = 2 ** 10
   ToyotaDriveMode = 2 ** 11
+
+
+# TOP-only state and params, kept out of car.capnp so its ordinals stay in sync with upstream.
+# openpilot publishes these as custom.CarStateTOP / custom.CarParamsTOP; field names must match.
+@dataclass
+class CarStateTOP:
+  brakeholdGovernor: bool = False
+  accelProfile: int = 0
+
+
+@dataclass
+class CarParamsTOP:
+  experimentalModeViaWheel: bool = True
+  twilsoncoNNFF: bool = False
+  nnModelName: str = ""
+  nnModelFuzzyMatch: bool = False

@@ -299,7 +299,7 @@ class CarController(CarControllerBase):
     # AleSato's Automatic Brake Hold
     if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
        and not (self.CP.flags & ToyotaFlags.SECOC.value) and (self.CP.flags & ToyotaFlags.HYBRID.value) and self.frame % 2 == 0:
-      if CS.out.brakeholdGovernor:
+      if CS.out_top.brakeholdGovernor:
         can_sends.append(toyotacan.create_brakehold_command(self.packer, {}, True if self.frame % 730 < 727 else False))
       else:
         can_sends.append(toyotacan.create_brakehold_command(self.packer, CS.stock_aeb, False))
@@ -396,7 +396,7 @@ class CarController(CarControllerBase):
           pcm_accel_cmd = float(np.clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX))
 
         if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and self.CP.flags & ToyotaFlags.HYBRID.value:
-          if CS.out.brakeholdGovernor and CS.out.standstill and stopping:
+          if CS.out_top.brakeholdGovernor and CS.out.standstill and stopping:
             pcm_accel_cmd = 0.0
             self.standstill_req = False
 
