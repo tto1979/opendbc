@@ -95,6 +95,8 @@ class FluxModel:
     self.output_size = params["output_size"]
     self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
+    # Optional: a model trained with a measured jerk input can state that it learned the car's friction itself
+    self.friction_override_setting = params.get("friction_override")
     self.layers = []
 
     for layer_params in params["layers"]:
@@ -163,6 +165,11 @@ class FluxModel:
         raise ValueError(f"Unknown activation: {activation}")
 
   def check_for_friction_override(self):
+    # The probe below asks for 0.1 torque at 0.2 m/s^3 with no lateral accel. A model that learned a smaller friction
+    # response from the car's own data would get the classic friction added on top of it, counting friction twice.
+    if isinstance(self.friction_override_setting, bool):
+      self.friction_override = self.friction_override_setting
+      return
     try:
       y = self.evaluate([10.0, 0.0, 0.2])
       self.friction_override = (y < 0.1)
