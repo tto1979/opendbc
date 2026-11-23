@@ -97,6 +97,9 @@ class FluxModel:
     self.input_std = np.array(params["input_std"], dtype=np.float32).T
     # Optional: a model trained with a measured jerk input can state that it learned the car's friction itself
     self.friction_override_setting = params.get("friction_override")
+    # Optional: multiple of the car's friction the controller adds while the steering wheel is held still by static
+    # friction (0 = off). For EPS that hold the wheel through a wide torque band (Prius v: 0.2-0.4 of max).
+    self.stuck_friction_gain = float(params.get("stuck_friction_gain", 0.0))
     self.layers = []
 
     for layer_params in params["layers"]:
