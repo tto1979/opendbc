@@ -180,7 +180,7 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
 
-    if top_params & structs.TopFlags.ToyotaTSSPTune & (ret.flags & ToyotaFlags.SMART_DSU):
+    if (top_params & structs.TopFlags.ToyotaTSSPTune) and (ret.flags & ToyotaFlags.SMART_DSU):
       ret.stoppingDecelRate = 0.25  # reach stopping target smoothly
       ret.longitudinalTuning.kiBP = [0., 15.]
       ret.longitudinalTuning.kiV = [1.6, 1.2]
