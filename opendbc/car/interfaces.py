@@ -355,7 +355,7 @@ class CarInterfaceBase(ABC):
       model_path, model_name, exact_match, similarity_score = get_nn_model_path(CP.carFingerprint, eps_firmware)
 
       if model_path is not None:
-        ret.nnModelName = model_name
+        ret.nnModelName = model_name or ""
         ret.nnModelFuzzyMatch = not exact_match
 
         match_info = f"exact ({similarity_score:.3f})" if exact_match else f"fuzzy ({similarity_score:.3f})"
