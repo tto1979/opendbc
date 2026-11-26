@@ -46,10 +46,22 @@ jobs:
           - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need upstream's merge base
+      - name: Diff against upstream
+        if: github.repository != 'commaai/opendbc'
+        run: |
+          # TOP: fail on mutants surviving in TOP's own safety changes, upstream's code is mutation tested upstream
+          git fetch --no-tags https://github.com/commaai/opendbc.git master
+          echo "GIT_REF=$(git merge-base HEAD FETCH_HEAD)" >> $GITHUB_ENV
       - name: Run mutation tests
         run: |
           source setup.sh
-          python opendbc/safety/tests/mutation.py
+          if [ -n "$GIT_REF" ]; then
+            python opendbc/safety/tests/mutation_top.py
+          else
+            python opendbc/safety/tests/mutation.py
+          fi
 
   car_diff:
     name: car diff

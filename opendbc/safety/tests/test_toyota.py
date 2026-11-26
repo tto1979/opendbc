@@ -259,6 +259,18 @@ class TestToyotaSafetyTorque(TestToyotaSafetyBase, common.MotorTorqueSteeringSaf
     self.safety.set_safety_hooks(CarParams.SafetyModel.toyota, self.EPS_SCALE)
     self.safety.init_tests()
 
+  def test_alka_rate_limits_continue(self):
+    # TOP: with ALKA the torque may stay on while controls aren't allowed, so the rate limits keep counting from
+    # the last command instead of starting over from zero every frame
+    self.safety.set_alternative_experience(ALTERNATIVE_EXPERIENCE.ALKA)
+    self.safety.set_controls_allowed(False)
+    self._set_prev_torque(0)
+    for t in (self.MAX_RATE_UP, 2 * self.MAX_RATE_UP, 3 * self.MAX_RATE_UP):
+      self.assertTrue(self._tx(self._torque_cmd_msg(t)))
+    # without ALKA, no torque without controls_allowed
+    self.safety.set_alternative_experience(ALTERNATIVE_EXPERIENCE.DEFAULT)
+    self.assertFalse(self._tx(self._torque_cmd_msg(3 * self.MAX_RATE_UP)))
+
 
 class TestToyotaSafetyAngle(TestToyotaSafetyBase, common.AngleSteeringSafetyTest):
 
