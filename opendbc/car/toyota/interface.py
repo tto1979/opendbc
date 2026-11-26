@@ -16,6 +16,8 @@ class CarInterface(CarInterfaceBase):
   CarController = CarController
   RadarInterface = RadarInterface
 
+  DRIVABLE_GEARS = (structs.CarState.GearShifter.sport,)
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams(CP).ACCEL_MIN, CarControllerParams(CP).ACCEL_MAX
@@ -83,25 +85,8 @@ class CarInterface(CarInterfaceBase):
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.TOYOTA_AVALON
 
-    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023, CAR.TOYOTA_RAV4_PRIME, CAR.TOYOTA_SIENNA_4TH_GEN):
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.1]
-      ret.lateralTuning.pid.kf = 0.00007818594
-
-      # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
-      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
-      for fw in car_fw:
-        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.pid.kpV = [0.15]
-          ret.lateralTuning.pid.kiV = [0.05]
-          ret.lateralTuning.pid.kf = 0.00004
-          break
-
-    elif candidate in (CAR.TOYOTA_CHR, CAR.TOYOTA_CAMRY, CAR.TOYOTA_SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX):
-      # TODO: Some of these platforms are not advertised to have full range ACC, are they similar to SNG_WITHOUT_DSU cars?
+    elif candidate in (CAR.TOYOTA_CHR, CAR.TOYOTA_CAMRY, CAR.TOYOTA_SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_LS, CAR.LEXUS_NX):
+      # TODO: Some of these platforms are not advertised to have full range ACC, do they really all have sng?
       stop_and_go = True
 
     # TODO: these models can do stop and go, but unclear if it requires sDSU or unplugging DSU.
@@ -115,16 +100,13 @@ class CarInterface(CarInterfaceBase):
     # Detect flipped signals and enable for C-HR and others
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
 
-    # No radar dbc for cars without DSU which are not TSS 2.0
-    # TODO: make an adas dbc file for dsu-less models
-    ret.radarUnavailable = Bus.radar not in DBC[candidate] or candidate in (NO_DSU_CAR - TSS2_CAR)
+    ret.radarUnavailable = Bus.radar not in DBC[candidate]
 
-    # since we don't yet parse radar on TSS2/TSS-P radar-based ACC cars, gate longitudinal behind experimental toggle
-    if candidate in (RADAR_ACC_CAR | NO_DSU_CAR):
-      ret.alphaLongitudinalAvailable = candidate in RADAR_ACC_CAR
+    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind alpha toggle
+    if candidate in RADAR_ACC_CAR:
+      ret.alphaLongitudinalAvailable = True
 
-      # Disabling radar is only supported on TSS2 radar-ACC cars
-      if alpha_long and candidate in RADAR_ACC_CAR:
+      if alpha_long:
         ret.flags |= ToyotaFlags.DISABLE_RADAR.value
 
       # RADAR_ACC_CAR = CHR TSS2 / RAV4 TSS2
@@ -154,7 +136,7 @@ class CarInterface(CarInterfaceBase):
     #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
     #  - cars w/ DSU disconnected
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
-    # openpilot longitudinal behind experimental long toggle:
+    # openpilot longitudinal behind alpha long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)

@@ -76,7 +76,7 @@ class ToyotaFlags(IntFlag):
   NO_STOP_TIMER = 256
   # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
   SNG_WITHOUT_DSU = 512
-  # these cars can utilize 3.0 m/s^2
+  # these cars can utilize 2.0 m/s^2
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
   RADAR_FILTER = 2 ** 12
@@ -110,9 +110,9 @@ class ToyotaCarDocs(CarDocs):
 
 
 @dataclass
-class ToyotaCommunityCarDocs(ToyotaCarDocs):
-  support_type: SupportType = SupportType.COMMUNITY
-  support_link: str = "#community"
+class ToyotaSecOcCarDocs(ToyotaCarDocs):
+  support_type: SupportType = SupportType.CUSTOM
+  support_link: str = "#secoc-cars-with-recoverable-keys"
 
 
 @dataclass
@@ -169,13 +169,14 @@ class CAR(Platforms):
     ],
     TOYOTA_AVALON.specs,
   )
+  # TODO: determine if TSS-P NO_DSU cars can work with toyota_adas radar DBC and re-enable
   TOYOTA_CAMRY = PlatformConfig(
     [
       ToyotaCarDocs("Toyota Camry 2018-20", video="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
       ToyotaCarDocs("Toyota Camry Hybrid 2018-20", video="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
     ],
     CarSpecs(mass=3400. * CV.LB_TO_KG, wheelbase=2.82448, steerRatio=13.7, tireStiffnessFactor=0.7933),
-    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+    {Bus.pt: 'toyota_nodsu_pt_generated'},
     flags=ToyotaFlags.NO_DSU,
   )
   TOYOTA_CAMRY_TSS2 = ToyotaTSS2PlatformConfig( # TSS 2.5
@@ -191,7 +192,7 @@ class CAR(Platforms):
       ToyotaCarDocs("Toyota C-HR Hybrid 2017-20"),
     ],
     CarSpecs(mass=3300. * CV.LB_TO_KG, wheelbase=2.63906, steerRatio=13.6, tireStiffnessFactor=0.7933),
-    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+    {Bus.pt: 'toyota_nodsu_pt_generated'},
     flags=ToyotaFlags.NO_DSU,
   )
   TOYOTA_CHR_TSS2 = ToyotaTSS2PlatformConfig(
@@ -301,11 +302,11 @@ class CAR(Platforms):
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
   )
   TOYOTA_RAV4_PRIME = ToyotaSecOCPlatformConfig(
-    [ToyotaCommunityCarDocs("Toyota RAV4 Prime 2021-23", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaSecOcCarDocs("Toyota RAV4 Prime 2021-23", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4372. * CV.LB_TO_KG, wheelbase=2.68, steerRatio=16.88, tireStiffnessFactor=0.5533),
   )
   TOYOTA_YARIS = ToyotaSecOCPlatformConfig(
-    [ToyotaCommunityCarDocs("Toyota Yaris (Non-US only) 2020, 2023", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaSecOcCarDocs("Toyota Yaris (Non-US only) 2020, 2023", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=1170, wheelbase=2.55, steerRatio=14.80, tireStiffnessFactor=0.5533),
     flags=ToyotaFlags.RADAR_ACC,
   )
@@ -320,7 +321,7 @@ class CAR(Platforms):
     flags=ToyotaFlags.NO_STOP_TIMER,
   )
   TOYOTA_SIENNA_4TH_GEN = ToyotaSecOCPlatformConfig(
-    [ToyotaCommunityCarDocs("Toyota Sienna 2021-23", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaSecOcCarDocs("Toyota Sienna 2021-23", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4625. * CV.LB_TO_KG, wheelbase=3.06, steerRatio=17.8, tireStiffnessFactor=0.444),
   )
 
@@ -409,6 +410,11 @@ class CAR(Platforms):
     CarSpecs(mass=4034. * CV.LB_TO_KG, wheelbase=2.84988, steerRatio=13.3, tireStiffnessFactor=0.444),
     dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
+  )
+  LEXUS_LS = PlatformConfig(
+    [ToyotaCarDocs("Lexus LS 2018", "All except Lexus Safety System+ A")],
+    CarSpecs(mass=4905. * CV.LB_TO_KG, wheelbase=3.125, steerRatio=15.0, tireStiffnessFactor=0.444),
+    dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   )
 
 
