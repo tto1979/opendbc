@@ -111,7 +111,8 @@ jobs:
   # TODO: this needs to move to opendbc
   test_models:
     name: test models
-    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    # openpilot's op.sh setup supports Ubuntu 24.04, ubuntu-latest is newer
+    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
