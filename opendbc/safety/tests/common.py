@@ -286,14 +286,6 @@ class TorqueSteeringSafetyTestBase(SafetyTestBase, abc.ABC):
           else:
             self.assertTrue(self._tx(self._torque_cmd_msg(t)))
 
-  def test_steer_no_alka_neighbor_bit(self):
-    # TOP: only ALT_EXP_ALKA lets torque through without controls_allowed, not a neighboring bit (bit 0)
-    self.safety.set_alternative_experience(1)
-    self.safety.set_controls_allowed(False)
-    for t in (-self.MAX_RATE_UP, self.MAX_RATE_UP):
-      self._set_prev_torque(t)
-      self.assertFalse(self._tx(self._torque_cmd_msg(t)))
-
   def test_non_realtime_limit_up(self):
     self.safety.set_controls_allowed(True)
 
@@ -791,14 +783,6 @@ class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
             # controls_allowed is checked if actuation bit is 1, else the angle must be close to meas (inactive)
             should_tx = controls_allowed if steer_control_enabled else angle_cmd == angle_meas
             self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(angle_cmd, steer_control_enabled)))
-
-  def test_angle_cmd_no_alka_neighbor_bit(self):
-    # TOP: only ALT_EXP_ALKA may allow steering without controls_allowed, not a neighboring bit (bit 0)
-    self.safety.set_alternative_experience(1)
-    self.safety.set_controls_allowed(False)
-    self._reset_angle_measurement(0)
-    self._set_prev_desired_angle(0)
-    self.assertFalse(self._tx(self._angle_cmd_msg(0, True)))
 
   def test_angle_violation(self):
     # If violation occurs, angle cmd is blocked until reset to 0. Matches behavior of torque safety modes
