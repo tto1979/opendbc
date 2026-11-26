@@ -176,9 +176,8 @@ static bool rt_angle_rate_limit_check(AngleSteeringLimits limits) {
 // Safety checks for angle-based steering commands
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits) {
   bool violation = false;
-  bool alka_enabled = (alternative_experience & ALT_EXP_ALKA) != 0;
 
-  if ((controls_allowed || alka_enabled) && steer_control_enabled) {
+  if (controls_allowed && steer_control_enabled) {
     // convert floating point angle rate limits to integers in the scale of the desired angle on CAN,
     // add 1 to not false trigger the violation. also fudge the speed by 1 m/s so rate limits are
     // always slightly above openpilot's in case we read an updated speed in between angle commands

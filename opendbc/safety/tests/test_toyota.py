@@ -169,6 +169,23 @@ class TestToyotaSafetyBase(common.CarSafetyTest, common.LongitudinalAccelSafetyT
         self._rx(acc_off_msg)
       self.assertFalse(self._tx(aeb_msg), "AEB message should be blocked when ACC main is off")
 
+  def test_aeb_auto_brake_hold_fwd(self):
+    """The camera's AEB message (0x344) is held back from the car only while the brake hold conditions are met"""
+    for allow_aeb, moving, gas_pressed, main_on in itertools.product((True, False), repeat=4):
+      self.safety.set_alternative_experience(ALTERNATIVE_EXPERIENCE.ALLOW_AEB if allow_aeb else ALTERNATIVE_EXPERIENCE.DEFAULT)
+      self._rx(self._speed_msg(10 if moving else 0))
+      self._rx(self._user_gas_msg(gas_pressed))
+      self._rx(self._acc_state_msg(main_on))
+      hold = allow_aeb and not moving and not gas_pressed and main_on
+
+      for bus in (0, 2):
+        for addr in (0x344, 0x345):
+          fwd_bus = self.FWD_BUS_LOOKUP.get(bus, -1)
+          if addr in self.FWD_BLACKLISTED_ADDRS.get(bus, []) or (hold and bus == 2 and addr == 0x344):
+            fwd_bus = -1
+          self.assertEqual(fwd_bus, self.safety.safety_fwd_hook(bus, addr),
+                           f"{addr=:#x} {bus=} {allow_aeb=} {moving=} {gas_pressed=} {main_on=}")
+
   def test_block_aeb(self, stock_longitudinal: bool = False):
     for controls_allowed in (True, False):
       for bad in (True, False):
