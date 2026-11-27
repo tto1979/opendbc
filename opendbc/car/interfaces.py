@@ -445,7 +445,10 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   def top_configure_torque_tune(candidate, ret):
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    # NNFF runs in the torque controller: cars on another lateral tuning get the torque params. A car already on torque
+    # keeps its own; configuring it again reset its steering angle deadzone (non-ZSS Prius: 0.2 deg -> 0)
+    if ret.lateralTuning.which() != 'torque':
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     return ret
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
