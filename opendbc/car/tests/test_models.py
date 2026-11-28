@@ -171,7 +171,7 @@ class TestCarModelBase(unittest.TestCase):
     car_fw, cls.can_msgs, alpha_long = cls.get_testing_data()
     cls.raw_can_keys = {(msg.address, msg.src) for _, messages in cls.can_msgs for msg in messages if msg.src < 128}
     cls.CarInterface = interfaces[cls.platform]
-    cls.CP = cls.CarInterface.get_params(cls.platform, cls.fingerprint, car_fw, alpha_long, False, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.platform, cls.fingerprint, car_fw, alpha_long, False, top_params=0, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.platform
 
@@ -293,7 +293,7 @@ class TestCarModelBase(unittest.TestCase):
     controller_params = self.CP
     if self.CP.brand == "volkswagen" and self.CP.flags & VolkswagenFlags.MLB and self.CP.openpilotLongitudinalControl:
       # Some archived MLB routes record alpha longitudinal, which current MLB safety does not support.
-      controller_params = self.CarInterface.get_params(self.platform, self.fingerprint, self.CP.carFw, False, False, docs=False)
+      controller_params = self.CarInterface.get_params(self.platform, self.fingerprint, self.CP.carFw, False, False, top_params=0, docs=False)
 
     def test_car_controller(car_control):
       now_nanos = 0
