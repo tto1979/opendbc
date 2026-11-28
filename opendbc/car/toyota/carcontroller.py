@@ -9,9 +9,7 @@ from opendbc.car.common.pid import PIDController
 from opendbc.car.secoc import add_mac, build_sync_mac
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.toyota import toyotacan
-from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        CarControllerParams, ToyotaFlags, \
-                                        UNSUPPORTED_DSU_CAR, RADAR_ACC_CAR
+from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, CarControllerParams, ToyotaFlags
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.can import CANPacker
 
@@ -71,7 +69,7 @@ def get_long_tune(CP, params):
   if CP.flags & ToyotaFlags.TSSP_TUNE.value:
     kiBP = [0., 5., 35.]
     kiV = [3.6, 2.4, 1.5]
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.flags & ToyotaFlags.TSS2:
       kiBP = [2., 5.]
       kiV = [0.5, 0.25]
   else:
@@ -253,7 +251,7 @@ class CarController(CarControllerBase):
     can_sends.append(steer_command)
 
     # STEERING_LTA does not seem to allow more rate by sending faster, and may wind up easier
-    if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
+    if self.frame % 2 == 0 and self.CP.flags & ToyotaFlags.TSS2:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
       # cut steering torque with TORQUE_WIND_DOWN when either EPS torque or driver torque is above
       # the threshold, to limit max lateral acceleration and for driver torque blending respectively.
@@ -293,10 +291,10 @@ class CarController(CarControllerBase):
         else:
           self._standstill_req = False
 
-    self.standstill_req = self._standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR and not self.topsng
+    self.standstill_req = self._standstill_req and not (self.CP.flags & ToyotaFlags.NO_STOP_TIMER) and not self.topsng
 
     # AleSato's Automatic Brake Hold
-    if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) \
+    if self.CP.flags & ToyotaFlags.AUTO_BRAKE_HOLD.value and (self.CP.flags & ToyotaFlags.TSS2 and not self.CP.flags & ToyotaFlags.RADAR_ACC) \
        and not (self.CP.flags & ToyotaFlags.SECOC.value) and (self.CP.flags & ToyotaFlags.HYBRID.value) and self.frame % 2 == 0:
       if CS.out_top.brakeholdGovernor:
         can_sends.append(toyotacan.create_brakehold_command(self.packer, {}, True if self.frame % 730 < 727 else False))
@@ -418,7 +416,7 @@ class CarController(CarControllerBase):
     else:
       # we can spam can to cancel the system even if we are using lat only control
       if pcm_cancel_cmd:
-        if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
+        if self.CP.flags & ToyotaFlags.UNSUPPORTED_DSU:
           can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
         else:
           can_sends.append(toyotacan.create_accel_command(self.packer, 0, 0, pcm_cancel_cmd, True, False, self.lead or CS.out.vEgo < 12., CS.acc_type, False,

@@ -10,7 +10,7 @@ from typing import Any
 from collections.abc import Callable
 from functools import cache
 
-from opendbc.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from opendbc.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia_per_mass, scale_tire_stiffness_per_mass
 from opendbc.car import structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.common.basedir import BASEDIR
@@ -44,8 +44,8 @@ GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
-TorqueFromLateralAccelCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning, bool], float]
-LateralAccelFromTorqueCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning, bool], float]
+TorqueFromLateralAccelCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning], float]
+LateralAccelFromTorqueCallbackType = Callable[[float, structs.CarParams.LateralTorqueTuning], float]
 
 
 def similarity(s1:str, s2:str) -> float:
@@ -254,6 +254,7 @@ class RadarInterfaceBase(ABC):
     self.CP = CP
     self.rcp = None
     self.pts: dict[int, structs.RadarData.RadarPoint] = {}
+    self.track_id: int = 0
     self.frame = 0
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
@@ -321,7 +322,6 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate, top_params)
 
     platform = PLATFORMS[candidate]
-    ret.mass = platform.config.specs.mass
     ret.wheelbase = platform.config.specs.wheelbase
     ret.steerRatio = platform.config.specs.steerRatio
     ret.centerToFront = ret.wheelbase * platform.config.specs.centerToFrontRatio
@@ -336,18 +336,17 @@ class CarInterfaceBase(ABC):
       if top_params & structs.TopFlags.NNFF:
         ret = CarInterfaceBase.top_configure_torque_tune(candidate, ret)
 
-    if not ret.notCar:
-      ret.mass = ret.mass + STD_CARGO_KG
-
     # Set params dependent on values set by the car interface
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
+    ret.rotationalInertiaPerMass = scale_rot_inertia_per_mass(ret.wheelbase)
+    ret.tireStiffnessFrontPerMass, ret.tireStiffnessRearPerMass = scale_tire_stiffness_per_mass(ret.wheelbase, ret.centerToFront,
+                                                                                              ret.tireStiffnessFactor)
 
     return ret
 
-  @staticmethod
-  def get_params_top(CP: structs.CarParams, top_params: int) -> structs.CarParamsTOP:
+  @classmethod
+  def get_params_top(cls, CP: structs.CarParams, top_params: int) -> structs.CarParamsTOP:
     ret = structs.CarParamsTOP()
+    cls._get_params_top(ret, CP, top_params)
     ret.twilsoncoNNFF = bool(top_params & structs.TopFlags.NNFF)
 
     if CP.lateralTuning.which() == 'torque':
@@ -400,6 +399,11 @@ class CarInterfaceBase(ABC):
   def lateral_accel_from_torque(self) -> LateralAccelFromTorqueCallbackType:
     return self.lateral_accel_from_torque_linear
 
+  @staticmethod
+  def _get_params_top(ret: structs.CarParamsTOP, CP: structs.CarParams, top_params: int) -> None:
+    # TOP: brand specific CarParamsTOP, override in the brand's CarInterface
+    pass
+
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
   def get_std_params(candidate: str, top_params: int = 0) -> structs.CarParams:
@@ -418,14 +422,8 @@ class CarInterfaceBase(ABC):
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
-    ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
-    ret.vEgoStopping = 0.5
-    ret.vEgoStarting = 0.5
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.]
     # TODO estimate car specific lag, use .15s for now

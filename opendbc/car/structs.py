@@ -4,12 +4,8 @@ from dataclasses import dataclass
 import capnp
 from opendbc.car.common.basedir import BASEDIR
 
-# TODO: remove car from cereal/__init__.py and always import from opendbc
-try:
-  from cereal import car
-except ImportError:
-  capnp.remove_import_hook()
-  car = capnp.load(os.path.join(BASEDIR, "car.capnp"))
+capnp.remove_import_hook()
+car = capnp.load(os.path.join(BASEDIR, "car.capnp"), imports=[BASEDIR])
 
 CarState = car.CarState
 RadarData = car.RadarData
@@ -51,3 +47,7 @@ class CarParamsTOP:
   twilsoncoNNFF: bool = False
   nnModelName: str = ""
   nnModelFuzzyMatch: bool = False
+  # longitudinal stopping/starting tune, dropped from upstream CarParams in 0.11.2 (defaults = upstream's old defaults)
+  vEgoStopping: float = 0.5  # [m/s] speed at which the car goes into stopping state
+  vEgoStarting: float = 0.5  # [m/s] speed at which the car goes into starting state
+  stoppingDecelRate: float = 0.8  # [m/s^2/s] while trying to stop
