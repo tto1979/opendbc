@@ -363,8 +363,10 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
 
   bool violation = false;
   bool alka_enabled = (alternative_experience & ALT_EXP_ALKA) != 0;
+  // TOP: ALKA may steer while controls aren't allowed, but always within the same limits
+  bool steering_allowed = controls_allowed || alka_enabled;
 
-  if (controls_allowed && steer_control_enabled) {
+  if (steering_allowed && steer_control_enabled) {
     // *** ISO lateral jerk limit ***
     // calculate maximum angle rate per second
     const float max_curvature_rate_sec = MAX_LATERAL_JERK / (fudged_speed * fudged_speed);
@@ -398,12 +400,12 @@ bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, co
   }
 
   // No angle control allowed when controls are not allowed
-  if (!controls_allowed && !alka_enabled)  {
+  if (!steering_allowed) {
     violation |= steer_control_enabled;
   }
 
   // reset to current angle if either controls is not allowed or there's a violation
-  if (violation || !controls_allowed) {
+  if (violation || !steering_allowed) {
     desired_angle_last = SAFETY_CLAMP(angle_meas.values[0], -limits.max_angle, limits.max_angle);
   }
 
